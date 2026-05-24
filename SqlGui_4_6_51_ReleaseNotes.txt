@@ -1,0 +1,1740 @@
+﻿================================================================================
+SqlGui V4.6.51 â€“ Release Notes & Gesamtdokumentation
+Stand: 2026-05-24
+================================================================================
+
+================================================================================
+NEU IN VERSION 4.6.49
+================================================================================
+
+  A. LAYOUT â€“ Workflow-Treeview
+
+  â€¢ Workflow-Label: mehr Abstand nach unten
+    Das Label "Workflow" hat jetzt mehr Abstand zur darunterliegenden
+    Treeview-Tabelle (pady angepasst).
+
+  â€¢ Name-Spalte deutlich breiter
+    Die Spalte "name" im Workflow-Treeview ist jetzt breiter (400 px,
+    stretch=True), damit auch lange Bezeichnungen vollstÃ¤ndig lesbar sind.
+
+  â€¢ Workflow-Treeview: Abstand nach oben
+    Der gesamte Workflow-Bereich hat jetzt mehr Abstand zur Projektliste
+    darÃ¼ber.
+
+  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  B. EINSTELLUNGEN-REITER im SQL-Fenster
+
+  â€¢ Neuer Reiter "EINSTELLUNGEN" im SQL-Fenster-Notebook
+    Die vier Breiteneinstellungen (Listenbreite, Eingabebreite, Tabellenbreite,
+    Feldbreite) und der "Anwenden"-Button wurden aus der frÃ¼heren Zeile am
+    unteren Rand des SQL-Fensters in einen eigenen Reiter "EINSTELLUNGEN"
+    verschoben. Die alte Einstellungszeile entfÃ¤llt.
+
+  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  C. WORKFLOW-FENSTER: Ã–ffnen und Positionierung
+
+  â€¢ Typ-Umbenennung: "SQL" â†’ "SQL-Abfrage"
+    In zzz_Projekt_Workflow wird der Typ "SQL" jetzt als "SQL-Abfrage"
+    gespeichert. Bestehende EintrÃ¤ge werden automatisch migriert.
+
+  â€¢ Doppelklick Ã¶ffnet Fenster
+    Doppelklick auf einen Workflow-Eintrag Ã¶ffnet das zugehÃ¶rige Fenster:
+      â€“ Typ "Tabelle"    â†’ Tabellenfenster (wie Doppelklick im Hauptfenster)
+      â€“ Typ "SQL-Abfrage"â†’ eigenstÃ¤ndiges SQL-Ergebnisfenster mit vollstÃ¤ndigem
+                           Rechtsklick-MenÃ¼ (Kopieren, Anzeigen, Filtern, IPv4)
+
+    Jedes Fenster ist ein separates Toplevel-Fenster mit eigener Position und
+    GrÃ¶ÃŸe â€“ das gemeinsame SQL-Fenster wird nicht wiederverwendet.
+
+  â€¢ Button "Position der Projekt-Fenster merken"
+    Im PROJEKT-Reiter: neuer Button speichert Position und GrÃ¶ÃŸe aller
+    aktuell offenen Workflow-Fenster sowie des Hauptfensters in
+    zzz_Konfiguration (Bereich "Projekt-Layout:<projektname>").
+    Jedes Projekt hat sein eigenes Layout.
+    Der Zustand des Hauptfensters (normal / maximiert) wird ebenfalls gemerkt.
+
+  â€¢ Beim Aktivieren: Fenster Ã¶ffnen und positionieren
+    Wenn ein Projekt als aktiv gesetzt wird, werden automatisch alle im
+    Workflow eingetragenen Tabellen- und SQL-Abfrage-Fenster geÃ¶ffnet und
+    auf die gespeicherte Position/GrÃ¶ÃŸe gesetzt.
+    Das Hauptfenster wird ebenfalls auf die gespeicherte GrÃ¶ÃŸe gebracht
+    (oder auf maximiert, falls so gespeichert).
+
+  â€¢ Beim Laden der Datenbank: aktives Projekt wird automatisch aktiviert
+    Ist beim DB-Laden ein Projekt als aktiv markiert, werden alle Workflow-
+    Fenster automatisch geÃ¶ffnet und positioniert.
+
+  â€¢ Admin-Schutz
+    Der PROJEKT-Reiter und der Button "Position merken" sind nur im
+    Admin-/SQL-Fenster zugÃ¤nglich. Im Projektmodus (ohne Admin-Zugang)
+    kÃ¶nnen Benutzer die Layouts nicht verÃ¤ndern.
+
+  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+  D. FENSTERRAHMEN â€“ Farbstreifen
+
+  â€¢ DÃ¼nner Farbstreifen oben in jedem Fenster
+    Jedes Anwendungsfenster (Tabellenfenster, SQL-Ergebnisfenster,
+    SQL-Abfrage-Fenster, Fensterliste, alle weiteren Fenster) erhÃ¤lt
+    einen konfigurierbaren Farbstreifen direkt unter der MenÃ¼leiste.
+
+  â€¢ Konfiguration im EINSTELLUNGEN-Reiter
+    Auswahl Ã¼ber Radio-Buttons:
+      Kein Streifen Â· Hellblau (#93DAFE) Â· Orange (#FF7403) Â· Dunkelblau (#192C76)
+    Farbe wird in zzz_Konfiguration gespeichert und beim nÃ¤chsten Start
+    automatisch wiederhergestellt.
+
+  â€¢ Bug-Fix: Streifen erscheint jetzt korrekt oben unter der MenÃ¼leiste
+    In SQL-Abfrage-Fenstern und SQL-Ergebnis-Fenstern erschien der Streifen
+    zuvor am unteren Rand. Ursache war eine falsche Pack-Reihenfolge; jetzt
+    wird der Streifen immer als erstes Element (vor dem Content) eingebaut.
+
+
+================================================================================
+NEU IN VERSION 4.6.51
+================================================================================
+
+  â€¢ Drei Farbstreifen statt einem
+    Im EINSTELLUNGEN-Reiter gibt es jetzt drei unabhÃ¤ngige Streifen:
+      â€“ Streifen 1
+      â€“ Streifen 2
+      â€“ Streifen 3
+    Jeder Streifen kann unabhÃ¤ngig auf eine der Farben gesetzt werden
+    oder deaktiviert bleiben. Damit sind Kombinationen mÃ¶glich, z.B.:
+      Orange â€“ Dunkelblau â€“ Orange
+      Hellblau â€“ Orange â€“ Hellblau
+
+  â€¢ Erweiterte Farbpalette fÃ¼r Fensterstreifen
+    Die Farbauswahl wurde von 3 auf 10 Farben erweitert:
+      Rot Â· Gelb Â· Hellblau Â· Orange Â· Dunkelblau Â·
+      Helles GrÃ¼n Â· Dunkles GrÃ¼n Â· Magenta Â· Bernstein Â· Phosphor-GrÃ¼n
+    Jede Farbe wird als anklickbares farbiges Quadrat dargestellt â€“
+    ohne Textbeschriftung, kompakter und Ã¼bersichtlicher.
+    Radiobutton mit indicatoron=False: das Quadrat selbst zeigt den
+    Auswahlzustand (gedrÃ¼ckt = aktiv, erhaben = inaktiv).
+
+  â€¢ Konfigurierbare StreifenhÃ¶he
+    Per Spinbox (1â€“20 px, Standard 4 px) wird die HÃ¶he aller aktiven
+    Streifen gleichzeitig eingestellt. Wird in zzz_Konfiguration
+    (SchlÃ¼ssel "rahmenhoehe") gespeichert.
+
+  â€¢ Fensterliste-Farben konfigurierbar
+    Im EINSTELLUNGEN-Reiter gibt es einen neuen Abschnitt
+    "Fensterliste-Farben" mit drei unabhÃ¤ngigen FarbwÃ¤hlern:
+      â€“ Hellblau   (Hintergrund Kopfleiste, Treeview-Zeilen, Buttons)
+      â€“ Dunkelblau (Schriftfarbe Ã¼berall in der Fensterliste)
+      â€“ Orange     (Hintergrund Hauptbereich, Auswahl-Markierung)
+    Jede der drei Rollen lÃ¤sst sich auf eine beliebige Farbe aus der
+    Palette setzen. "Anwenden" schlieÃŸt die Fensterliste sofort und
+    Ã¶ffnet sie neu â€“ die neuen Farben sind sofort sichtbar.
+    Gespeichert in zzz_Konfiguration (Bereich "Fensterliste").
+
+  â€¢ Bug-Fix: Streifen 2 wurde nicht angezeigt
+    Beim Aktualisieren bereits offener Fenster wurde rf.pack() auf bereits
+    gepackten Frames erneut aufgerufen. Tkinter verschiebt den Frame dabei
+    ans Ende der Pack-Reihe, wodurch er hinter dem Content verschwand.
+    Fix: pack() wird nur noch aufgerufen wenn der Frame gerade unsichtbar
+    ist (winfo_ismapped()), sonst nur configure(bg=farbe).
+
+  â€¢ Bug-Fix: Streifen 3 wurde nicht angezeigt
+    Leere tk.Frame-Instanzen ohne pack_propagate(False) kÃ¶nnen auf 0 px
+    kollabieren. Fix: pack_propagate(False) wird jetzt fÃ¼r alle drei
+    Streifen-Frames gesetzt.
+
+  â€¢ Projekt-Views: mehrere benannte Fensterlayouts pro Projekt
+    Jedes Projekt kann beliebig viele Views speichern. Eine View merkt sich,
+    welche Workflow-Fenster offen sind und wo sie stehen.
+
+    Benennung: einfache Nummer (1, 2, 3 â€¦) oder â€ž1 - Beschreibung".
+    Die nÃ¤chste freie Nummer wird automatisch vorgeschlagen.
+
+    Beim Laden einer View:
+      â€“ Alle offenen Fenster auÃŸer dem Hauptfenster werden geschlossen
+      â€“ Genau die Fenster der View werden geÃ¶ffnet und positioniert
+
+    Zugriff Ã¼ber zwei identische UntermenÃ¼s (je ein Klick):
+      â— Projektname  â†’  1 - Netzwerk-Analyse
+                         2 - Findings-Ãœbersicht
+                         â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                         Admin SQL Ansicht laden
+                         SQL-Fenster Ã¶ffnen
+
+      Das UntermenÃ¼ erscheint sowohl in der Hauptfenster-MenÃ¼leiste
+      als auch in der Fensterliste-MenÃ¼leiste (bei aktivem Projekt).
+      Es wird bei jedem Ã–ffnen neu aufgebaut â€“ neue Views erscheinen
+      sofort, ohne Neustart.
+
+    Verwaltung im PROJEKT-Reiter:
+      â€“ Dropdown mit allen gespeicherten Views + [Laden] [LÃ¶schen]
+      â€“ Namensfeld (Auto-Vorschlag) + [Aktuelle Fenster als View speichern]
+      â€“ Die View-Liste aktualisiert sich automatisch bei Projektwechsel
+
+  â€¢ Button umbenannt: â€žAdmin SQL Ansicht laden"
+    War: â€žGespeicherte Positionen der Projekt-Fenster laden".
+    LÃ¤dt das Haupt-Layout des Projekts (alle Workflow-Fenster) â€“
+    identisch zum Verhalten beim Projekt-Aktivieren. Dient als
+    Vollzugriffs-Ansicht neben den fokussierten Views.
+    Erscheint auch im UntermenÃ¼ unter â— Projektname.
+
+    Typischer Arbeitsablauf fÃ¼r Admin SQL Ansicht:
+      1. â€žAdmin SQL Ansicht laden" â†’ alle Fenster Ã¶ffnen sich
+      2. Fenster manuell verschieben / skalieren
+      3. â€žPosition der Projekt-Fenster merken" â†’ Positionen speichern
+
+  â€¢ â€žAlle Fenster nach vorne holen" im Projektmodus verbessert
+    Bei aktivem Projekt lÃ¤dt der Button jetzt die Admin SQL Ansicht
+    statt des normalen lift()-Durchlaufs (der bei Fullscreen-Fenstern
+    nicht zuverlÃ¤ssig funktioniert).
+    Ohne aktives Projekt lÃ¤uft der Button wie bisher.
+
+  â€¢ Fensterliste-Titelzeile: â— Projektname entfernt
+    Der Projektname steht jetzt im MenÃ¼ der Fensterliste â€“ die
+    Titelzeile zeigt nur noch â€žSqlGui â€¦ â€“ FENSTERLISTE".
+
+  â€¢ Tabellen-Theme: Retro-Farbschemas fÃ¼r alle Treeview-Ansichten
+    Im EINSTELLUNGEN-Reiter des SQL Editors gibt es einen neuen Abschnitt
+    â€žTabellen-Theme" mit drei wÃ¤hlbaren Farbschemas:
+      â€“ Standard       WeiÃŸer Hintergrund, schwarze Schrift (bisheriges Aussehen)
+      â€“ Bernstein      Schwarzer Hintergrund, bernsteinfarbene Schrift (#FFBF00),
+                       Selektion in gedimmtem Bernstein
+      â€“ Phosphor-GrÃ¼n  Schwarzer Hintergrund, phosphorgrÃ¼ne Schrift (#33FF33),
+                       Selektion in gedimmtem PhosphorgrÃ¼n
+    Die Theme-Buttons sind in den jeweiligen Farben gestaltet
+    (Bernstein-Button: schwarzer Grund / bernsteinfarbene Schrift;
+    Phosphor-Button: schwarzer Grund / phosphorgrÃ¼ne Schrift).
+    Auswahl per Klick â€“ das Theme wird sofort angewendet, kein
+    separater â€žAnwenden"-Button nÃ¶tig.
+    Wird in zzz_Konfiguration gespeichert und beim nÃ¤chsten DB-Laden
+    automatisch wiederhergestellt.
+
+  â€¢ Button umbenannt: â€žAdmin SQL Ansicht speichern"
+    War: â€žPosition der Projekt-Fenster merken".
+    Speichert Position und GrÃ¶ÃŸe aller offenen Workflow-Fenster des
+    aktiven Projekts â€“ identisch zum bisherigen Verhalten, nur mit
+    prÃ¤ziserem Namen.
+
+  â€¢ SQL Editor: nach View-Laden immer im Vordergrund
+    Nach dem Laden einer View oder der Admin SQL Ansicht bleibt das
+    SQL-Editor-Fenster im Vordergrund. Vorher wurden neu positionierte
+    Tabellenfenster Ã¼ber dem SQL Editor gestapelt, sodass kein
+    direktes Klicken mehr mÃ¶glich war.
+
+  â€¢ VollstÃ¤ndiger Dunkel-Modus: gesamte Anwendung wird eingefÃ¤rbt
+    Das aktive Theme (Bernstein / Phosphor-GrÃ¼n / Standard) gilt nun
+    nicht mehr nur fÃ¼r Treeview-Zellen, sondern fÃ¼r alle Widgets der
+    gesamten Anwendung:
+
+    tk-Widgets (rekursiv in allen offenen Fenstern):
+      Frame, Label, Button, Entry, Text, Radiobutton, Checkbutton,
+      Listbox, Canvas, Menu, Scrollbar, Panedwindow, Scale
+
+    ttk-Widgets (Ã¼ber ttk.Style, app-weit):
+      TFrame, TLabel, TButton, TEntry, TCombobox, TNotebook,
+      TNotebook.Tab, TScrollbar, TSeparator, TSpinbox, TLabelframe,
+      TPanedwindow, Sash, TRadiobutton, TCheckbutton, TProgressbar,
+      TScale
+
+    Ausnahmen (bleiben unverÃ¤ndert):
+      â€“ Fensterliste (eigenes Farbsystem)
+      â€“ Die drei Farbstreifen am oberen Rand jedes Fensters
+
+    Neu geÃ¶ffnete Tabellenfenster werden beim Ã–ffnen sofort in den
+    aktiven Farben eingefÃ¤rbt.
+    tk.option_add() sorgt dafÃ¼r, dass auch zukÃ¼nftig erzeugte Widgets
+    die richtigen Farben erhalten.
+
+  â€¢ Umbenennung: â€žSQL-Abfrage" â†’ â€žSQL Editor"
+    Das SQL-Editor-Fenster heiÃŸt jetzt Ã¼berall â€žSQL Editor":
+      â€“ MenÃ¼ SQL im Hauptfenster: â€žSQL Editor" (war â€žSQL-Abfrage")
+      â€“ Projekt-UntermenÃ¼: â€žAdmin SQL-Editor Ã¶ffnen" (war â€žAdmin SQL-Fenster Ã¶ffnen")
+      â€“ Fenstertitel: â€žâ€¦ â€“ SQL Editor" (war â€žâ€¦ â€“ SQL-Abfrage")
+    Interne Funktionsnamen, gespeicherte Workflow-Typen und Labels fÃ¼r
+    gespeicherte SQL-Abfragen (innerhalb des Editors) bleiben unverÃ¤ndert.
+
+  â€¢ View-Verwaltung: Speichern-Button fÃ¼r bestehende Views
+    In der View-Steuerzeile im PROJEKT-Reiter gibt es jetzt drei Buttons:
+      [Laden]  [LÃ¶schen]  [Speichern]
+    â€žSpeichern" Ã¼berschreibt die im Dropdown ausgewÃ¤hlte View mit den
+    aktuell offenen Fenstern und ihren Positionen â€“ kein Namenseingabe
+    nÃ¶tig, da der Name bereits aus dem Dropdown kommt.
+    Die untere Zeile (Name-Eingabe + â€žAktuelle Fenster als View speichern")
+    bleibt fÃ¼r das Anlegen neuer Views.
+
+  â€¢ Bug-Fix: Hauptfenster hatte keine Farbstreifen
+    Das Hauptfenster zeigte bisher keine Farbstreifen, obwohl alle anderen
+    Fenster (Tabellenfenster, Fensterliste, SQL-Fenster usw.) korrekt
+    gestreift waren. Ursache: der zentrale PanedWindow wurde per grid()
+    eingebettet, was nicht mit dem pack()-basierten Streifen-Mechanismus
+    kompatibel ist. Fix: PanedWindow wird jetzt per pack(fill="both",
+    expand=True) eingebettet; _rahmen_frame_anbringen() wird fÃ¼r das
+    Hauptfenster aufgerufen. Alle drei Streifen erscheinen jetzt auch
+    im Hauptfenster.
+
+  â€¢ Phosphor-GrÃ¼n zur Farbpalette hinzugefÃ¼gt
+    Die Fensterstreifen-Farbpalette enthÃ¤lt jetzt 10 Farben (war 9):
+    Phosphor-GrÃ¼n (#33FF33) wurde als 10. Farbe ergÃ¤nzt. Die Farbe
+    entspricht exakt dem Farbton des Phosphor-GrÃ¼n-Themes und kann
+    so fÃ¼r passende Fensterstreifen verwendet werden.
+
+  â€¢ Numerische Sortierung in Tabellenfenstern
+    Klick auf eine SpaltenÃ¼berschrift sortiert Zahlenwerte jetzt numerisch
+    statt lexikografisch. Bisher: 1, 10, 100, 2, 20 â€“ jetzt: 1, 2, 10,
+    20, 100. Spalten mit gemischtem Inhalt (Zahlen + Text) werden korrekt
+    behandelt: Zahlen zuerst, dann Text alphabetisch.
+
+  â€¢ Dunkel-Modus: Dropdown-MenÃ¼s werden eingefÃ¤rbt
+    Die MenÃ¼leisten in allen Fenstern werden jetzt ebenfalls im aktiven
+    Theme eingefÃ¤rbt. UntermenÃ¼s werden rekursiv mitgefÃ¤rbt. Das native
+    Top-Bar-MenÃ¼band von Windows bleibt systemseitig bedingt ggf.
+    hell â€“ alle aufklappenden EintrÃ¤ge sind jedoch im Theme-Farbton.
+
+  â€¢ Bug-Fix: Scrollbalken im Lesefenster grau
+    tk.Scrollbar verwendet auf Windows natives Rendering und ignoriert
+    alle Farbeinstellungen. Alle Scrollbalken (gui.py, sql.py, main.py)
+    wurden auf ttk.Scrollbar umgestellt â€“ diese werden korrekt vom
+    ttk-Style-System eingefÃ¤rbt.
+
+  â€¢ Bug-Fix: Farbquadrate der Palette wurden durch Theme Ã¼berschrieben
+    Die farbigen Quadrat-Radiobuttons im EINSTELLUNGEN-Reiter wurden
+    im Dunkel-Modus auf die Theme-Hintergrundfarbe gesetzt und dadurch
+    unsichtbar. Fix: alle Farb-Radiobuttons erhalten das Attribut
+    _no_theme=True und werden von der rekursiven EinfÃ¤rbung ausgenommen.
+
+  â€¢ Bug-Fix: Theme-Selector-Buttons zeigten falsche Farben
+    Nach einem Theme-Wechsel zeigten die drei Theme-Buttons (Standard /
+    Bernstein / Phosphor-GrÃ¼n) nicht mehr ihre eigenen Farben, sondern
+    die aktuelle Theme-Farbe. Fix: alle Theme-Buttons erhalten
+    _no_theme=True; der Standard-Button bekommt explizit die Farben
+    bg=#f0f0f0/fg=black gesetzt (bisher wurde implizit der System-
+    Standard verwendet, der durch option_add Ã¼berschrieben wurde).
+
+  â€¢ Bug-Fix: Fensterliste wurde beim Theme-Wechsel mitgefÃ¤rbt
+    Beim Wechsel des Themes wurde die Fensterliste fÃ¤lschlicherweise
+    in den Theme-Farben eingefÃ¤rbt, obwohl sie ein eigenes Farbsystem
+    hat. Ursache: die Fensterliste wurde erst nach dem ersten Traversal
+    aus der Ausnahmeliste (skip_ids) ausgeschlossen. Fix: die Fensterliste
+    wird jetzt vor jedem Traversal-Start in skip_ids eingetragen.
+
+  â€¢ Bug-Fix: Combobox- und Entry-Felder blieben grau im Dunkel-Modus
+    ttk.Combobox und ttk.Entry zeigten im Dunkel-Modus weiterhin einen
+    grauen Eingabehintergrund. Fix: neben fieldbackground wird jetzt auch
+    background gesetzt; zusÃ¤tzliche State-Maps (focus, !disabled, readonly,
+    active) stellen sicher, dass alle Widget-ZustÃ¤nde korrekt eingefÃ¤rbt
+    werden. FÃ¼r die Combobox-Dropdown-Liste: option_add fÃ¼r
+    *TCombobox*Listbox.background/.foreground.
+
+  â€¢ Bug-Fix: readonly-Entry-Felder blieben grau im Dunkel-Modus
+    Entry-Felder im readonly-Zustand (z.B. Projektname, alter Wert im
+    â€žFeld editieren"-Dialog) verwendeten das separate Tkinter-Attribut
+    readonlyBackground statt background. Fix: readonlyBackground und
+    disabledBackground werden in _fenster_einfaerben() explizit gesetzt;
+    option_add("*Entry.readonlyBackground") sorgt fÃ¼r neu geÃ¶ffnete Dialoge.
+
+  â€¢ Bug-Fix: Hauptfenster-Streifen nach DB-Laden fehlend (zweite Ursache)
+    Nach dem ersten Fix (PanedWindow auf pack() umgestellt) erschienen
+    die Streifen beim Programmstart korrekt, gingen aber nach einem
+    DB-Laden verloren. Ursache: db_laden() rief
+    rahmenfarbe_alle_fenster_aktualisieren() nicht auf. Fix: nach dem
+    Laden der DB werden die gespeicherten Rahmenfarben und -hÃ¶hen aus
+    zzz_Konfiguration gelesen und auf alle Fenster angewendet.
+
+  â€¢ Startview pro Projekt festlegbar
+    Im PROJEKT-Reiter gibt es unterhalb der View-Steuerzeile eine neue Zeile:
+      [ Als Startview ]  [ Aufheben ]   Startview: <aktueller Name in Blau>
+    Ablauf:
+      1. GewÃ¼nschte View im Dropdown auswÃ¤hlen
+      2. â€žAls Startview" klicken â†’ diese View wird beim nÃ¤chsten Start oder
+         DB-Laden statt der Admin View geladen
+      3. â€žAufheben" setzt wieder auf â€žAdmin View (Standard)" zurÃ¼ck
+    Die aktuelle Startview wird direkt in der Zeile angezeigt.
+    Wird eine View gelÃ¶scht, die als Startview gesetzt war, wird die
+    Startview-Einstellung automatisch aufgehoben.
+    Gespeichert in zzz_Konfiguration (Bereich "Projekt-Startview").
+
+  â€¢ Bug-Fix: Farbstreifen beim Start nur auf Hauptfenster und Fensterliste
+    Beim Anwendungsstart fehlten die Farbstreifen auf allen Fenstern, die
+    durch ein aktives Projekt automatisch geÃ¶ffnet wurden (Tabellenfenster,
+    SQL-Editor-Fenster). Ursache: In fenster_registrieren() wurde die
+    Schutzliste skip_ids fÃ¼r Stripe-Frames zum Registrierungszeitpunkt
+    eingefroren â€“ aber _rahmen_frame_anbringen() (das den Stripe-Frame des
+    neuen Fensters in G_rahmen_frames eintrÃ¤gt) wurde erst danach aufgerufen.
+    50 ms spÃ¤ter Ã¼berschrieb _fenster_einfaerben() den frisch erstellten
+    Streifen mit der dunklen Theme-Hintergrundfarbe.
+    Fix: skip_ids wird jetzt zur Laufzeit des after(50)-Callbacks neu
+    aufgebaut â€“ zu diesem Zeitpunkt sind alle Stripe-Frames (inkl. des neu
+    geÃ¶ffneten Fensters) bereits in G_rahmen_frames eingetragen.
+
+  â€¢ Sicherheit: Admin-Code als pbkdf2-Hash in der Datenbank gespeichert
+    Der Admin-Code war bisher als Klartext ("4711") im Quellcode hinterlegt.
+    Er wird jetzt nicht mehr im Quellcode gespeichert, sondern als
+    pbkdf2_hmac-Hash (SHA-256, 100 000 Runden, 16-Byte-Zufallssalt) in
+    zzz_Konfiguration (Bereich "Admin").
+    â€“ Ersteinrichtung: beim ersten Admin-Zugriff auf eine DB ohne Hash
+      erscheint ein Einrichtungsdialog (Code 2Ã— eingeben, min. 4 Zeichen)
+    â€“ Jede Datenbank hat ihren eigenen Hash und Salt
+    â€“ Neuer MenÃ¼eintrag "Admin-Code Ã¤ndern..." im Datei-MenÃ¼: nach
+      Eingabe des alten Codes kann ein neuer gesetzt werden
+    â€“ hashlib.pbkdf2_hmac: selbst bei bekanntem Salt mÃ¼sste ein Angreifer
+      100 000 Hash-Runden pro Versuch berechnen
+
+  â€¢ Weitere Verbesserungen in 4.6.51
+    â€“ Fensterliste: Fokus-Problem bei Fullscreen behoben (Fensterliste
+      wurde von Fullscreen-Fenstern immer wieder Ã¼bernommen).
+    â€“ Hauptfenster-Minimalbreite auf 300Ã—60 reduziert (war 920Ã—100).
+    â€“ SQL-Abfragefenster Minimalbreite reduziert (war 1100Ã—640, jetzt
+      800Ã—300) â€“ Fenster kann deutlich kleiner gezogen werden.
+    â€“ zzz_Findings wird jetzt wie zzz_Logging absteigend nach datetime
+      sortiert angezeigt (neueste EintrÃ¤ge oben).
+    â€“ Fensterliste: Typ-Spalte zeigt fÃ¼r Workflow-Fenster nur noch den
+      Kurztyp "SQL-Abfrage" (nicht mehr den vollen Abfragenamen).
+    â€“ Fensterliste-Titel zeigt bei aktivem Projekt den Projektnamen:
+        "â€¦ FENSTERLISTE  â—  Projektname"
+    â€“ Hauptfenster-Titel: "Vorschau geladen"-Zusatz erscheint nicht
+      mehr, wenn ein Projekt aktiv ist (Projekttitel hat Vorrang).
+
+
+  • ORDER BY im SELECT-Reiter
+    Der SELECT-Reiter des SQL-Builders hat jetzt einen eigenen ORDER BY-
+    Bereich (analog zur WHERE-Bedingung):
+      – Tabelle und Feld per Dropdown auswählbar
+      – Sortierrichtung: ASC oder DESC
+      – Mehrere ORDER BY-Einträge möglich (Neu / Löschen)
+      – "In Statement einfügen": fügt eine einzelne ORDER BY-Zeile ein
+      – "Alle einfügen": baut die vollständige ORDER BY-Klausel auf
+        (ORDER BY feld1 ASC, feld2 DESC)
+      – ORDER BY-Einträge werden als JSON in zzz_SQL_ABFRAGEN gespeichert
+        und beim Laden der Abfrage wiederhergestellt
+    Die Haupttabelle (SELECT FROM) wird ebenfalls mit der gespeicherten
+    Abfrage gespeichert und beim Laden automatisch wiederhergestellt
+    (neue DB-Spalte "haupttabelle" in zzz_SQL_ABFRAGEN).
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  • UDF-Modul: SqlGui_V4_6_51_udf.py
+    Alle SQLite User Defined Functions wurden in ein eigenes Modul
+    SqlGui_V4_6_51_udf.py ausgelagert (analog zu _gui, _text, _sql).
+    Das Modul ist vollständig eigenständig (keine externen Callbacks nötig)
+    und registriert alle UDFs über udf_alle_registrieren(verbindung).
+
+  • Neue UDF: ip_in_range_pruefen(ip, maske, ip_range)
+    Prüft ob eine IP-Adresse innerhalb eines IP-Bereichs liegt.
+      – ip_range: "192.168.1.0/24" (CIDR) oder "192.168.1.0-192.168.1.255"
+      – maske: separates Argument oder NULL (wenn ip/prefix kombiniert)
+      – Rückgabe: 'OK' wenn die IP im Bereich liegt, sonst 'FEHLER: ...'
+    Die UDF-Registrierung unterstützt jetzt pro Funktion eine individuelle
+    Argumentanzahl (n_args); vorher war 1 für alle UDFs hardcodiert.
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  • Funktionsvorlagen vereinheitlicht
+    Alle Einträge im Funktionen-Panel des SQL-Editors folgen jetzt dem
+    einheitlichen Format  Funktion(Feld) AS Alias.
+    Vorher hatten einzelne Einträge DB-spezifische Feldnamen, IS NOT NULL
+    oder gar kein Alias. Jetzt: generische Platzhalternamen, einheitliches
+    AS-Alias, kein doppelter ip_in_range_pruefen-Eintrag.
+    Übersicht der Vorlagen:
+      IPv4 → Integer        ipv4_to_int(Feld) AS IPv4_Integer
+      IP-Range Start        ip_range_start(Feld) AS IP_Start
+      IP-Range Ende         ip_range_end(Feld) AS IP_Ende
+      Hat IP-Adresse        hat_ip(Feld) AS Gefundene_IP
+      Hat Netzmaske         hat_netzmaske(Feld) AS Gefundene_Maske
+      IP in Range prüfen    ip_in_range_pruefen(Feld, Maske, Range_Feld) AS IP_In_Range
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  • Neue UDF: ip_range_aufteilen(IP_Range)
+    SQLite-UDF gibt Start- und Endadresse eines IP-Bereichs als lesbaren
+    String zurück. Start-IP steht in beiden Varianten an derselben
+    Zeichenposition (Position 15) – sauberer Filter möglich:
+      Mit Bereich:   'Start-Ende    10.0.0.1 - 10.0.0.254'
+      Einzeladresse: 'Start/Einzeladresse  10.0.0.1  (ohne Maske nicht eindeutig bestimmbar)'
+      Bei Fehler:    'ERROR [IP-Range]: ...'
+
+  • UDF ip_in_range_pruefen: Fehler-Klassifikation
+    Fehlermeldungen sind jetzt nach Ursache kategorisiert:
+      ERROR [Eingabe]:   – IP-Adresse oder IP-Range fehlt
+      ERROR [Netzmaske]: – Maske nicht lesbar oder außerhalb /0–/32
+      ERROR [Oktett]:    – ungültige Oktette in der IP-Adresse
+      ERROR [IP-Range]:  – ungültige oder widersprüchliche Range
+      ERROR [Prüfung]:   – IP/Netz liegt nicht in der Range
+    Alle 'FEHLER:'-Präfixe wurden auf 'ERROR:' umgestellt
+    (Vorbereitung für spätere Englishifizierung).
+
+  • UDF ip_in_range_pruefen: Hinweis [Vorgabe] bei großen Ranges
+    Umfasst die Range mehr als 65.534 Hosts, erscheint statt 'OK' ein
+    Hinweis – mit zwei Fällen:
+      – Range deckt sich exakt mit der Vorgabe (netz_groesse == host_anzahl):
+        'Hinweis [Vorgabe]: IP-Range sehr groß (X Hosts) – konform mit Vorgabe /N'
+      – Range ist größer als die Vorgabe (unüblich, aber zulässig):
+        'Hinweis [Vorgabe]: IP-Range sehr groß (X Hosts) – Vorgabe /N umfasst
+         nur X Host(s) – unüblich, aber zulässig'
+
+  • UDF ip_in_range_pruefen: Range-Info bei fehlender IP
+    Ist die IP-Adresse NULL/leer, wird die IP-Range trotzdem ausgewertet.
+    Trennzeichen zwischen Basis und Range-Info: '  |  '.
+    Alle Fälle mit gültiger Range sind 'Hinweis' (kein Vergleich möglich,
+    aber Range selbst ist zulässig); ungültige Range bleibt 'ERROR':
+      'Hinweis [Eingabe]: IP-Adresse fehlt  |  Start-Ende    10.0.0.1 - 10.0.0.254 – kein Vergleich möglich'
+      'Hinweis [Eingabe]: IP-Adresse fehlt  |  Start-Ende identisch    10.0.0.1 – kein Vergleich möglich'
+      'Hinweis [Eingabe]: IP-Adresse fehlt  |  Start    10.0.0.1 – kein Vergleich möglich'
+      'ERROR [Eingabe]: IP-Adresse fehlt  |  ERROR [IP-Range]: ...'
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  • Funktionsvorlagen: sprechende Platzhalter und Rückgabewert-Info
+    Die Einträge im Funktionen-Panel des SQL-Editors wurden erweitert:
+      – Argumentnamen sind jetzt beschreibend (IP_Adresse, IP_Range,
+        Textfeld, Netzmaske) statt generischem 'Feld'
+      – Jede Vorlage zeigt rechts den möglichen Rückgabewert, Fehler-/
+        NULL-Zustand steht dabei immer links:
+          NULL / Integer    – NULL oder Integer-Wert
+          ERROR / Start|Ende – Fehlertext oder 'Start-Ende    X - Y'
+          NULL / IP         – NULL oder IP-Adresse
+          NULL / /24        – NULL oder Netzmaske
+          ERROR / OK        – Fehlertext oder 'OK'
+      – ip_range_aufteilen als neue Vorlage ergänzt (war nur im
+        Rechtsklick-Menü verfügbar)
+    Aktuelle Vorlagenliste:
+      IPv4 → Integer       NULL / Integer     ipv4_to_int(IP_Adresse)
+      IP-Range aufteilen   ERROR / Start|Ende ip_range_aufteilen(IP_Range)
+      IP-Range Start       NULL / IP          ip_range_start(IP_Range)
+      IP-Range Ende        NULL / IP          ip_range_end(IP_Range)
+      Hat IP-Adresse       NULL / IP          hat_ip(Textfeld)
+      Hat Netzmaske        NULL / /24         hat_netzmaske(Textfeld)
+      IP in Range prüfen   ERROR / OK         ip_in_range_pruefen(IP_Adresse, Netzmaske, IP_Range)
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  • Applikation beenden: Prüfung auf ungespeicherte SQL-Änderungen
+    Wenn der SQL Editor ungespeicherte Änderungen enthält, erscheint
+    beim Beenden (Button, Menü oder X-Button) ein Ja/Nein/Abbrechen-Dialog:
+      – Ja:        Änderungen speichern, dann beenden
+      – Nein:      Beenden ohne Speichern
+      – Abbrechen: Beenden abbrechen
+    Schlägt das Speichern fehl, erscheint ein zweiter Dialog
+    ("Trotzdem beenden?").
+
+  • SQL Ergebnisfenster: Rechtsklick-Menü überarbeitet
+    – Spaltenüberschrift: Rechtsklick zeigt jetzt ausschließlich
+      "Alle Spaltennamen vollständig anzeigen" (kein Zellen-Menü mehr)
+    – Zellen-Menü Block 2: "Alle Spaltennamen vollständig anzeigen"
+      ergänzt (war nur über Spaltenüberschrift erreichbar)
+    – "Netzwerk IP oder Maske anzeigen" nur noch in Block 4
+      (war fälschlicherweise auch in Block 3 vorhanden)
+
+  • ip_in_range_pruefen: Nutzbare-Hosts-Prüfung (SCCM-konform)
+    SCCM definiert IP-Ranges als nutzbare Hosts (ohne Netzadresse und Broadcast).
+    Für Präfixe < /31 wird jetzt netz_start+1 bis netz_end-1 geprüft statt
+    des vollständigen Netzblocks. Dadurch ergibt 10.0.0.0/16 gegen die Range
+    10.0.0.1-10.0.255.254 korrekt 'OK' (vorher ERROR [Prüfung]).
+    /31 und /32: alle Adressen sind nutzbar (RFC 3021), kein Ausschluss.
+
+  • ip_in_range_pruefen: OK-Meldung mit Detail-Info
+    Bei erfolgreichem Ergebnis erscheint jetzt eine vollständige Meldung:
+      'OK – Nutzbare Hosts des 10.0.0.0/16-Netzes (10.0.0.1 – 10.0.255.254)
+       liegen innerhalb der IP-Range (10.0.0.1-10.0.255.254) (SCCM-konform)'
+    Ohne Präfix entfällt der Netz-Teil; bei /32 steht der einzelne Host.
+
+  • ip_in_range_pruefen: Hinweis [Vorgabe] statt WARNING/ERROR [Vorgabe]
+    Vorher: 'OK – WARNING: ...' bzw. 'ERROR [Vorgabe]: ...'
+    Jetzt:  'Hinweis [Vorgabe]: ...' (nicht verboten, aber auffällig)
+
+  • ip_in_range_pruefen: Hinweis/ERROR bei unvollständigen Oktetten
+    Hat die IP-Adresse weniger als 4 Oktette, wird .0 für jedes fehlende
+    Oktett angenommen. Plural/Singular korrekt: 1 Oktett / 2 Oktette.
+    Trennzeichen '  |  ' zwischen Basis und Prüfergebnis.
+    Vier Fälle je nach Maske und Range:
+
+    Mit Maske: vollständige Netzprüfung (Range muss im Netz liegen):
+      'Hinweis [Oktett]: IP-Adresse '172.23.124' fehlt 1 Oktett  |
+       Annahme .0 → 172.23.124.0/24 – Range liegt im Netz,
+       umfasst nur 62 von 254 nutzbaren Hosts (172.23.124.1-172.23.124.62)'
+
+    Ohne Maske: engsten passenden Prefix automatisch suchen (/32 bis /1):
+      'Hinweis [Oktett]: IP-Adresse '10.226.84' fehlt 1 Oktett  |
+       Annahme .0 → 10.226.84.0 – Range (10.226.84.1-10.226.84.254)
+       passt zu /24 (254 von 254 nutzbaren Hosts)'
+
+    Kein passendes Netz / Range passt nicht:
+      'ERROR [Oktett]: IP-Adresse '172.23.124' fehlt 1 Oktett -
+       Annahme .0 → 172.23.124.0/24 liegt NICHT in IP-Range (...)'
+
+    Range ungültig:
+      'ERROR [Oktett]: IP-Adresse '172.23.66' fehlt 1 Oktett -
+       IP-Range ungültig (172.23.66.0-172.23.66.254)'
+
+  • ip_range_aufteilen: Start-Ende identisch
+    Wenn Start- und End-IP identisch sind (z.B. '10.0.0.1-10.0.0.1'),
+    erscheint statt 'Start-Ende    10.0.0.1 - 10.0.0.1' jetzt:
+      'Start-Ende identisch    10.0.0.1'
+
+  • ip_in_range_pruefen: Vorgabe-Kontext bei ungültiger IP-Range
+    Wenn die IP-Range nicht parsebar ist, enthält die Fehlermeldung jetzt
+    den Kontext der geprüften Vorgabe:
+      'ERROR [IP-Range]: Startadresse ... ist größer als Endadresse ...
+       – Vorgabe 172.23.122.0/23 nicht prüfbar'
+
+  • ip_in_range_pruefen: Hinweis [Oktett] bei Oktett außerhalb 0–255
+    War ein Oktett außerhalb 0–255 und die Range ist gültig, erscheint
+    jetzt 'Hinweis' statt 'ERROR', da der Datenfehler (Tippfehler im Wert)
+    kein Systemfehler ist und die Range selbst zulässig bleibt:
+      'Hinweis [Oktett]: 320 in '172.17.320.32' liegt außerhalb 0–255  |
+       Range 172.17.230.34-172.17.230.62 zulässig – kein Vergleich möglich'
+    Ist die Range ungültig oder fehlt, bleibt es 'ERROR [Oktett]'.
+
+  • Workflow-Ergebnisfenster: vollständiges Rechtsklick-Menü
+    Das Ergebnisfenster für Workflow-SQL-Abfragen hatte bisher nur vier
+    Einträge (Feldinhalt kopieren, Zeile kopieren, Zeile als CSV,
+    Tabelle als CSV). Es wurde auf das vollständige Menü vereinheitlicht:
+      Block 1 – Kopieren:  Feldinhalt · Zeile · Zeile als CSV ·
+                           Header als CSV · Tabelle als CSV
+      Block 2 – Anzeigen: Feldinhalt im Lesefenster ·
+                           Zeile im Lesefenster ·
+                           Alle Spaltennamen vollständig anzeigen
+      Block 3 – Filtern:  Feldfilter setzen · Feldfilter aufheben ·
+                           Eindeutige Feldwerte anzeigen
+                           (inkl. Prefix-Spinbox, Rechtsklick, Doppelklick)
+      Block 4 – IPv4:     Integer zu IPv4 · IPv4 zu Integer ·
+                           IP-Range aufteilen · Netzwerk IP oder Maske
+    Spaltenüberschrift-Rechtsklick zeigt nur "Alle Spaltennamen vollständig
+    anzeigen" (identisch zum normalen SQL-Ergebnisfenster).
+
+  • Automatische Spaltenbreiten beim Laden
+    Beim ersten Öffnen eines Ergebnisfensters (SQL-Ergebnis und Workflow-
+    Ergebnisfenster) werden die Spaltenbreiten jetzt automatisch gesetzt:
+      – Messung per echter Schrift-Metrik (tkinter.font.measure)
+      – Pro Spalte: max(Header-Breite, längster Zellinhalt) aus bis zu
+        200 Zeilen
+      – Obergrenze: G_MAX_SPALTEN_BREITE (verhindert, dass eine breite
+        Spalte alle anderen verdrängt)
+      – Mindestbreite: 60 px
+    Kein manuelles "Alle Spaltennamen vollständig anzeigen" beim Start
+    mehr nötig. Der Menüpunkt bleibt für nachträgliche Anpassungen.
+
+  • Eindeutige Feldwerte: Prefix-Auswertung und Interaktion
+    Das Fenster "Eindeutige Feldwerte anzeigen" wurde erweitert:
+    – Prefix-Spinbox (0 = alle Zeichen): legt fest, wie viele Anfangszeichen
+      für die Eindeutigkeits-Auswertung herangezogen werden.
+      Aktualisiert die Liste automatisch bei jeder Änderung –
+      kein separater "Anwenden"-Button nötig.
+      Info-Label zeigt Anzahl eindeutiger Werte und aktiven Prefix.
+    – Rechtsklick-Menü auf Listenwert:
+        "Wert kopieren"       – Wert in Zwischenablage
+        "Als Filter anwenden" – setzt diesen Wert als Feldfilter
+    – Doppelklick auf Listenwert: Filter wird direkt angewendet
+    – Spinbox-Pfeiltasten vergrößert (Schriftgröße 13 statt Standard ~9)
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  • Zeile im Lesefenster: Navigation zwischen Datensätzen
+    "Zeile im Lesefenster anzeigen" (Rechtsklick-Menü, Block 2) öffnet jetzt
+    ein Fenster mit ▲/▼-Navigationsbuttons zum Blättern zwischen Zeilen:
+      – '▲ Vorherige' / '▼ Nächste' (Buttons links unten)
+      – Pfeiltasten ↑ ↓ auf der Tastatur
+      – Escape schließt das Fenster
+      – Fenstertitel zeigt aktuelle Position: 'Zeile – Abfragename  [3/47]'
+      – Treeview-Markierung im Hintergrund zieht mit der Navigation mit
+    Gilt für SQL-Ergebnisfenster und Workflow-Ergebnisfenster.
+
+  • Bug-Fix: ORDER BY Feld-Dropdown war leer
+    order_by_tab (Tabellen-Combobox im ORDER BY-Bereich) fehlte in
+    tabellen_liste_fuellen() – dadurch erhielt es nie Tabellenwerte und
+    das Feld-Dropdown blieb immer leer. Fix: order_by_tab wird jetzt
+    in tabellen_liste_fuellen() befüllt.
+
+  • Bug-Fix: Haupttabelle wurde beim Laden nicht wiederhergestellt
+    select_from_tabelle (SELECT FROM-Feld) wurde beim Laden einer
+    gespeicherten Abfrage nicht restauriert. Fix: neue Spalte "haupttabelle"
+    in zzz_SQL_ABFRAGEN; wird beim Speichern gesetzt und beim Laden
+    in select_from_tabelle eingetragen.
+
+  • Bug-Fix: "In Statement einfügen" (ORDER BY) fehlte ORDER BY-Präfix
+    Der Button fügte nur "feld ASC" ein statt "ORDER BY feld ASC".
+    Fix: vollständige ORDER BY-Zeile wird als neue Zeile eingefügt.
+
+  • ip_in_range_pruefen: Einzeladresse als Range mit Maske – alle Fälle
+    Wenn eine Maske angegeben ist und die IP-Range nur eine einzelne IP enthält
+    (kein Bindestrich), werden jetzt vier Fälle unterschieden:
+
+    Alle Meldungen enthalten den Erklärungssatz "/{N}-Maske auf {IP} ergibt Netz {Netz}/{N}",
+    damit der User nachvollziehen kann, woher abweichende IP-Adressen stammen.
+    Vier Fälle mit jeweils eigenem Label in den eckigen Klammern:
+
+    1. ERROR [Netzadresse] – Range-IP ist die Netzadresse des Netzes:
+         'ERROR [Netzadresse]: 172.20.128.0/24 – IP-Range (172.20.128.0) ist die
+          Netzadresse des /24-Netzes, keine nutzbare Host-Adresse – nicht nutzbar
+          (/24-Maske auf 172.20.128.0 ergibt Netz 172.20.128.0/24: 172.20.128.1–172.20.128.254)'
+
+    2. ERROR [Broadcast] – Range-IP ist die Broadcast-Adresse:
+         'ERROR [Broadcast]: 10.65.243.0/22 – IP-Range (10.65.243.255) ist die
+          Broadcast-Adresse des /22-Netzes, keine nutzbare Host-Adresse – nicht nutzbar
+          (/22-Maske auf 10.65.243.0 ergibt Netz 10.65.240.0/22: 10.65.240.1–10.65.243.254)'
+
+    3. Hinweis [Einzeladresse] – Range enthält nur eine nutzbare Host-IP:
+         'Hinweis [Einzeladresse]: 10.65.243.0/22 – Range enthält nur einzelne IP (10.65.243.0),
+          kein Netzbereich – /22-Maske auf 10.65.243.0 ergibt Netz 10.65.240.0/22
+          mit 1.022 nutzbaren Hosts (10.65.240.1–10.65.243.254)'
+       Bewertung Hinweis (nicht ERROR): die IP liegt im Netz und funktioniert technisch,
+       der Netzbereich ist aber unvollständig angegeben.
+
+    4. ERROR [Netz-Mismatch] – Range-IP liegt außerhalb des Netzes:
+         'ERROR [Netz-Mismatch]: 10.65.243.0/22 – Range-IP 10.65.250.5 liegt nicht im Netz –
+          /22-Maske auf 10.65.243.0 ergibt Netz 10.65.240.0/22 (10.65.240.1–10.65.243.254)'
+
+    Vorher wurden alle Fälle mit 'ERROR [Prüfung]' und einer generischen Meldung behandelt,
+    die pruef_start/pruef_end (berechnete Netzgrenzen) anzeigte ohne zu erklären,
+    woher diese Adressen stammen.
+
+  • ip_in_range_pruefen: Vollständige IP ohne Maske → Prefix-Suche
+    Liegt eine vollständige IP-Adresse ohne Maske vor und schlägt die
+    direkte Range-Prüfung fehl, wird automatisch nach dem engsten CIDR-
+    Block gesucht (/32 bis /1), dessen nutzbare Hosts die IP-Range vollständig
+    enthalten. Ergebnis-Meldungen:
+      'Hinweis [Prüfung]: 10.1.2.3 ohne Maske – passt zu /16:
+       Nutzbare Hosts (10.1.0.1 – 10.1.255.254)
+       decken IP-Range (10.1.0.1-10.1.255.254) vollständig'
+      'Hinweis [Prüfung]: 10.1.2.3 ohne Maske – passt zu /24:
+       Range liegt im Netz, umfasst nur 62 von 254 nutzbaren Hosts
+       (10.1.2.1-10.1.2.62)'
+
+  • ip_in_range_pruefen: Netz-Mismatch-Erkennung bei vollständiger IP ohne Maske
+    Findet auch die Prefix-Suche mit der IP selbst kein passendes Netz
+    (weil IP und Range in völlig verschiedenen Netzen liegen, z.B. 172.12.x vs
+    172.17.x), wird zusätzlich das Netz der Range selbst ermittelt und
+    mit dem der IP verglichen. Bewertung: Hinweis (nicht ERROR), weil die
+    Range technisch funktioniert – es liegt nur eine Dateninkonsistenz vor
+    (Beschreibung stimmt nicht mit der Range überein).
+    Die Meldung zeigt:
+      – welche Oktette abweichen
+      – zu welchem CIDR-Block die Range gehört
+    Beispiel (172.12.225.0 gegen Range 172.17.225.1-172.17.225.126):
+      'Hinweis [Prüfung]: 172.12.225.0 liegt nicht in Range 172.17.225.1-172.17.225.126
+         |  Netz-Mismatch (Oktett 2: 12 ≠ 17)
+         |  Range gehört zu 172.17.225.0/25 – alle 126 nutzbaren Hosts (172.17.225.1–172.17.225.126)'
+
+  • Lesefenster: Leerzeile zwischen Feldern
+    "Zeile im Lesefenster anzeigen" trennt jetzt jedes Feld durch eine
+    Leerzeile vom nächsten – die Darstellung ist damit deutlich lesbarer,
+    insbesondere bei Feldern mit langen Inhalten.
+
+  • SQL-Ergebnisfenster: Finding hinzufügen (Block 5)
+    Im Rechtsklick-Menü des SQL-Ergebnisfensters gibt es jetzt Block 5:
+      Block 5 – Findings: Finding hinzufügen
+    Der Dialog ermöglicht, einen Eintrag in zzz_Findings direkt aus dem
+    SQL-Ergebnisfenster heraus zu erstellen – ohne dass die Daten in einer
+    Tabelle liegen müssen:
+      – Tabellenname:   Dropdown aller Tabellen der aktuellen DB
+      – ID-Feld:        Dropdown der SQL-Ergebnisspalten;
+                        automatisch vorausgewählt: Spalte namens "id"
+                        (oder erste Spalte falls keine "id" vorhanden)
+      – ID-Inhalt:      readonly, wird automatisch aus der gewählten Zeile
+                        befüllt, wenn ID-Feld geändert wird
+      – Feldname:       Dropdown der SQL-Ergebnisspalten;
+                        vorausgewählt: die beim Rechtsklick angeklickte Spalte
+      – Feldinhalt:     readonly, automatisch aus Zeile befüllt
+      – Kurze Beschreibung: Combobox (vorhandene Beschreibungen zur Auswahl) +
+                        "Aus Feld ▾"-Dropdown: bei Auswahl einer Spalte wird
+                        deren Zellwert in die Beschreibung übernommen
+    Existiert für (TabellenName, idFeld, idFeldInhalt) bereits ein Finding,
+    erscheint ein Bestätigungsdialog zum Überschreiben.
+    zzz_Findings wird beim Speichern automatisch angelegt falls nicht vorhanden.
+    Gilt sowohl für SQL-Ergebnisfenster als auch für Workflow-Ergebnisfenster
+    (je eigene, vollständige Implementierung in beiden Fensterkontexten).
+
+    Aktualisierung: Tabellenname-Dropdown zeigt nur noch Tabellen aus der
+    aktuellen SQL-Abfrage (Parsing per Regex auf FROM/JOIN/INTO/UPDATE).
+    Fallback auf alle DB-Tabellen, wenn kein SQL-Text vorhanden oder das
+    Parsing nichts liefert.
+
+  • Tabellenbeziehungen (Definitionen pro Projekt)
+    Im PROJEKT-Reiter gibt es einen neuen Abschnitt "Tabellenbeziehungen"
+    direkt oberhalb des Workflow-Bereichs.
+
+    Konzept:
+      Pro Projekt können beliebig viele Beziehungen zwischen Tabellen
+      definiert werden. Eine Beziehung verbindet ein Quellfeld einer Tabelle
+      mit einem Zielfeld einer anderen Tabelle (z. B. GroupID verknüpft
+      BoundaryGroup mit BoundaryGroupMember). Jedes Projekt hat seine eigene
+      Beziehungsliste; mehrere Projekte können dieselbe Datenbank mit
+      unterschiedlichen Sichten nutzen.
+
+    zzz_Relationen (neue Systemtabelle):
+      id               INTEGER PRIMARY KEY AUTOINCREMENT
+      datetime         Zeitstempel
+      Projekt          Name des Projekts
+      Bezeichnung      Freitext-Bezeichnung der Beziehung (optional)
+      QuellTabelle     Tabelle mit dem Ausgangswert
+      QuellFeld        Feld in der Quelltabelle
+      ZielTabelle      Letzte Tabelle der Beziehung
+      ZielFeld         Verbindungsfeld in der Zieltabelle
+      Typ              Beziehungstyp: 1:1 · 1:N · N:1 · Kette
+      Kette            JSON-Schrittkette für Kettenbeziehungen (optional)
+      AnzeigenFelder   Kommagetrennte Feldliste der Zieltabelle (optional)
+      Reihenfolge      Anzeigereihenfolge im Treeview
+
+      Admin-Schutz: zzz_Relationen ist in G_GESCHUETZTE_TABELLEN –
+      Löschen, Leeren, Umbenennen, Feld editieren erfordern Admin-Code.
+      Migration: Typ, Kette und AnzeigenFelder werden beim ersten Öffnen
+      automatisch per ALTER TABLE in bestehende Tabellen nachgerüstet.
+
+    UI im PROJEKT-Reiter:
+      – Treeview mit Spalten: Bezeichnung · Typ · Pfad (QuellTab → ZielTab)
+      – Rechtsklick-Menü:
+          Einfache Beziehung hinzufügen  (A → B, direkter JOIN)
+          Kettenbeziehung hinzufügen     (A → B → C → …, mehrstufig)
+          Beziehung bearbeiten           (öffnet automatisch passenden Dialog)
+          Beziehung löschen
+      – Aktualisiert sich automatisch bei Projektwechsel.
+
+  • Beziehungstyp (1:1 / 1:N / N:1)
+    Beim Hinzufügen und Bearbeiten einer einfachen Beziehung wird jetzt
+    der Beziehungstyp über drei Radiobuttons festgelegt:
+      1:1  – 1 Quell-DS → 1 Ziel-DS   (ZielFeld = Schlüssel in ZielTabelle)
+      1:N  – 1 Quell-DS → N Ziel-DS   (ZielFeld = FK-Spalte in ZielTabelle)
+      N:1  – N Quell-DS → 1 Ziel-DS   (ZielFeld = Schlüssel in ZielTabelle)
+    Der Typ wird im Treeview als eigene Spalte angezeigt und im Verknüpfte-
+    Datensätze-Fenster als [1:N] vor dem Blocktitel eingeblendet.
+    Standard: 1:N.
+
+  • Kettenbeziehungen (A → Zwischen → Ziel)
+    Neben einfachen 2-Tabellen-Beziehungen können jetzt Kettenbeziehungen
+    mit beliebig vielen Zwischentabellen definiert werden.
+
+    Dialog "Kettenbeziehung hinzufügen/bearbeiten":
+      – Quelltabelle + Quellfeld (Ausgangspunkt)
+      – Schritte (dynamisch erweiterbar per "+ Schritt hinzufügen"):
+          Jeder Schritt: Von-Feld in vorheriger Tabelle  →  Zieltabelle
+                         auf Zielfeld  [Typ: 1:1 · 1:N · N:1]  [✕]
+          ☑ Im Ergebnis anzeigen  – Schritt im Ketten-Fenster an/abschalten
+          ◉ Felder bearbeiten ▶   – lädt Felder dieser Tabelle in die rechte
+                                     Listbox zur Feldauswahl
+          Schritte können einzeln gelöscht werden.
+          Beim Wechsel einer Zieltabelle aktualisieren sich die Folge-
+          schritte automatisch; die Feldauswahl des Schritts wird zurückgesetzt.
+      – Feldauswahl je Schritt (rechte Listbox, Mehrfachauswahl):
+          Zeigt die Felder des per Radiobutton gewählten Schritts.
+          Nichts markiert = alle Felder dieses Schritts werden angezeigt.
+          Jeder Schritt hat eine eigene, unabhängige Feldauswahl.
+
+    Anzeige im Treeview:
+      Typ-Spalte zeigt "Kette"; Pfad-Spalte zeigt alle Tabellen:
+        BoundaryGroup → BoundaryGroupMember → Boundary
+
+    Abfrage im Hintergrund:
+      Aus der Schrittkette wird automatisch ein LEFT JOIN aufgebaut.
+      Alle Schritte der Kette sind immer Teil der JOIN-Kette. Nur die
+      Felder der aktiven Schritte erscheinen im SELECT:
+        SELECT t1.Feld_A, t2.Feld_B [nur aktive Schritte]
+        FROM QuellTabelle t0
+        LEFT JOIN Zwischen t1 ON t1.ZielFeld1 = t0.VonFeld1
+        LEFT JOIN Ziel     t2 ON t2.ZielFeld2 = t1.VonFeld2
+        WHERE t0.QuellFeld = ?
+      Namenskonflikte: Kommt ein Feldname in mehreren aktiven Schritten
+      vor, wird er als "Tabellenname.Feldname" angezeigt – ansonsten
+      ohne Präfix. Die Quelltabelle erscheint nicht im Ergebnis.
+
+  • Verknüpfte Datensätze: JOIN-Ansicht für mehrere Zeilen
+    Im Verknüpfte-Datensätze-Fenster gibt es unterhalb jedes Ergebnis-
+    blocks (wenn Folgebeziehungen existieren):
+      – Blauer Button: "▶▶ Alle N Zeilen mit 'ZielTabelle' verknüpft anzeigen"
+      – Rechtsklick auf Treeview-Zeile: selbe Option im Kontextmenü
+
+    Das JOIN-Fenster zeigt alle Zeilen beider Tabellen nebeneinander
+    (Spalten: QuellTabelle.Feld, ZielTabelle.Feld) mit horizontalem
+    Scrollbalken für viele Spalten.
+
+    Verknüpfte Datensätze anzeigen:
+      Rechtsklick in einem Tabellenfenster → Block 5 →
+      "Verknüpfte Datensätze anzeigen".
+      Für die markierte Zeile werden alle passenden Beziehungen des aktiven
+      Projekts geprüft. Für jede Beziehung erscheint ein eigener Block in
+      einem scrollbaren Ergebnisfenster. Bei Kettenbeziehungen wird direkt
+      das Endergebnis (JOINed) angezeigt.
+      Voraussetzung: Aktives Projekt ist gesetzt.
+
+  • ip_in_range_pruefen: Netz-Mismatch als Hinweis (nicht ERROR)
+    Liegt eine vollständige IP ohne Maske vor und schlägt auch die
+    Prefix-Suche fehl, weil IP und Range in völlig verschiedenen Netzen
+    liegen (z. B. 172.12.x gegen Range 172.17.x), wird dies als
+    'Hinweis [Prüfung]' gemeldet – nicht als ERROR. Begründung: die Range
+    selbst ist technisch korrekt; es liegt eine Dateninkonsistenz vor
+    (die beschreibende IP stimmt nicht mit der Range überein).
+
+  • ip_in_range_pruefen: Labels in eckigen Klammern spezifiziert
+    [Prüfung] war zu generisch. Vier neue Labels für die Einzeladresse-
+    als-Range-mit-Maske-Fälle:
+      ERROR [Netzadresse]  – Range-IP ist die Netzadresse des /N-Netzes
+      ERROR [Broadcast]    – Range-IP ist die Broadcast-Adresse
+      Hinweis [Einzeladresse] – Range enthält nur eine einzelne Host-IP
+      ERROR [Netz-Mismatch]   – Range-IP liegt außerhalb des Netzes
+
+  • ip_in_range_pruefen: Maske-Erklärung in Meldungen
+    Tauchen in Meldungen berechnete Netzgrenzen auf, die nicht direkt
+    aus den Eingabedaten stammen, wird jetzt erklärt woher sie kommen:
+      "/{N}-Maske auf {IP} ergibt Netz {Netz}/{N}"
+    Beispiel: "/22-Maske auf 10.65.243.0 ergibt Netz 10.65.240.0/22"
+
+  • ip_range_aufteilen: Label für Einzeladresse ohne Maske
+    War: 'Start    10.0.0.1'
+    Jetzt: 'Start/Einzeladresse  10.0.0.1  (ohne Maske nicht eindeutig bestimmbar)'
+    Begründung: ohne Netzmaske ist nicht klar, ob die IP als Netzstart
+    oder als Einzelhost gemeint ist – der User sieht das direkt.
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  • Kettenbeziehung: Quelltabellen-Felder auswählbar
+    Im Dialog "Kettenbeziehung hinzufügen/bearbeiten" gibt es jetzt unten
+    zwei nebeneinanderliegende Listboxen:
+      Links  – "Quelltabelle — oben angezeigt":
+               Welche Felder der Quelltabelle im Ketten-Fenster (oben)
+               erscheinen sollen. Nichts markiert = alle Felder.
+               Aktualisiert sich automatisch wenn die Quelltabelle gewechselt wird.
+      Rechts – "Zieltabelle — unten angezeigt":
+               Wie bisher: Felder der Zieltabelle.
+               Aktualisiert sich automatisch wenn sich der letzte Schritt ändert.
+    Neue DB-Spalte QuellFelder TEXT in zzz_Relationen (Migration automatisch).
+    Beide Feldlisten werden beim Bearbeiten mit den gespeicherten Werten
+    vorselektiert.
+
+  • Workflow-Typ "Kette": Master-Detail-Fenster
+    Im Workflow-Rechtsklick-Menü gibt es jetzt "⛓ Kette hinzufügen":
+      – Zeigt alle Kettenbeziehungen des aktiven Projekts zur Auswahl
+      – Fügt die gewählte Beziehung als Eintrag Typ "Kette" in den Workflow ein
+      – In der Workflow-Treeview wird die Bezeichnung der Beziehung angezeigt
+
+    Doppelklick auf einen "Kette"-Eintrag öffnet ein Master-Detail-Fenster:
+
+    Oben — Quelltabelle:
+      Alle Datensätze der Quelltabelle, mit den in QuellFelder gewählten
+      Spalten (oder allen Spalten wenn keine Auswahl). Der Join-Schlüssel
+      (Quellfeld) wird immer mitgeladen, auch wenn er nicht angezeigt wird.
+
+    Unten — Zieltabelle:
+      Zeigt anfangs "bitte oben auswählen". Beim Klick auf eine Zeile oben
+      wird sofort die Ketten-JOIN-Abfrage ausgeführt:
+        SELECT [AnzeigenFelder oder *] FROM QuellTabelle t0
+        LEFT JOIN Schritt1.Tabelle t1 ON t1.Feld = t0.VonFeld
+        ...
+        WHERE t0.QuellFeld = <gewählter Wert>
+      Die Zieltabelle zeigt die passenden Datensätze mit Titelzeile:
+        "Zieltabelle: X  —  N Datensätze  (QuellFeld = 'Wert')"
+
+    Spaltenbreiten beider Treeviews:
+      Werden automatisch per Schrift-Metrik (tkinter.font.measure) berechnet
+      – nur so breit wie nötig (Header-Text + längster Zellwert + Padding),
+      maximal 280 px, minimal 40 px. Die Zieltabelle passt sich bei jeder
+      neuen Auswahl automatisch an den neuen Inhalt an.
+
+    Fenstertitel:
+      ⛓ Bezeichnung — Kette — Projektname
+      Der Zusatz "Kette" macht den Fenstertyp auf den ersten Blick erkennbar.
+
+    Vollständiges Rechtsklick-Menü auf beiden Treeviews:
+      Spaltenüberschrift → "Alle Spaltennamen vollständig anzeigen"
+      Datenzeile (5 Blöcke, identisch zu SQL-Ergebnisfenstern):
+        Block 1 – Kopieren:  Feldinhalt · Zeile · Zeile als CSV ·
+                             Header als CSV · Tabelle als CSV
+        Block 2 – Anzeigen: Feldinhalt im Lesefenster ·
+                             Zeile im Lesefenster (▲/▼-Navigation) ·
+                             Alle Spaltennamen vollständig anzeigen
+        Block 3 – Filtern:  Feldfilter setzen · Feldfilter aufheben ·
+                             Eindeutige Feldwerte anzeigen
+                             (inkl. Prefix-Spinbox, Rechtsklick, Doppelklick)
+        Block 4 – IPv4:     Integer zu IPv4 · IPv4 zu Integer ·
+                             IP-Range aufteilen · Netzwerk IP oder Maske
+        Block 5 – Findings: Finding hinzufügen
+      Der Filter der Zieltabelle wird bei jeder neuen Quelltabellen-Auswahl
+      automatisch zurückgesetzt (neue Datensätze ersetzen vorherige).
+
+    Schritte aktivieren / deaktivieren — kombiniertes Zielfenster:
+      Im Dialog "Kettenbeziehung bearbeiten" hat jeder Schritt jetzt:
+        • Checkbox "Im Ergebnis anzeigen" — aktiviert/deaktiviert den
+          Schritt im Ketten-Fenster (Standard: letzter Schritt aktiv).
+        • Radiobutton "Felder bearbeiten ▶" — lädt die Spalten dieser
+          Schritt-Tabelle in die rechte Listbox zur Feldauswahl.
+          Die Felder jedes Schritts werden separat gespeichert.
+      Im Ketten-Fenster erscheint eine Checkbox-Leiste über dem Ergebnis:
+        "Schritte im Ergebnis:  ☑ Schritt 1: Tabelle1  ☑ Schritt 2: Tabelle2 …"
+        Jede Checkbox schaltet den zugehörigen Schritt live an/ab.
+      Das Ergebnis-Treeview zeigt kombinierte Felder aller aktiven Schritte:
+        • Feldname ohne Präfix, wenn er nur einmal vorkommt.
+        • "Tabelle.Feldname" als Präfix, wenn derselbe Name in mehreren
+          Schritten auftritt (Konflikt-Auflösung automatisch).
+        • Die Quelltabelle erscheint nicht im Ergebnis.
+      Die gesamte JOIN-Kette (alle Schritte) bleibt aktiv, nur die
+      SELECT-Spalten werden auf die aktiven Schritte beschränkt.
+      Rückwärtskompatibel: Alte Datensätze ohne aktiv/felder-Feld
+      öffnen automatisch mit dem letzten Schritt aktiviert;
+      AnzeigenFelder aus der DB wird als Feldauswahl dieses Schritts
+      übernommen.
+
+    Positions-Speicherung: Ketten-Fenster werden vollständig in allen
+    Positions-/View-Funktionen berücksichtigt (Merken, Laden, Views
+    speichern/laden, Startview). Beim Aktivieren eines Projekts öffnen
+    sich Ketten-Fenster automatisch wie Tabellen- und SQL-Abfrage-Fenster.
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  • Bug-Fix: "Admin Ansicht laden" im Hauptfenster-Menü ohne Wirkung
+    Der Menüpunkt ● Projektname → "Admin SQL Ansicht laden" im
+    Hauptfenster öffnete bei gesetzter Startview nur die Startview,
+    statt die Admin-Ansicht zu laden. Ursache: projekt_fenster_oeffnen()
+    rief projekt_fenster_oeffnen_und_positionieren() ohne ignore_startview=True
+    auf. Fix: beide Aufrufstellen (Hauptfenster-Menü und SQL-Editor-Button)
+    übergeben jetzt ignore_startview=True. Automatische Aufrufe (DB-Laden,
+    alle Fenster nach vorne holen, Projekt aktivieren) respektieren die
+    Startview weiterhin.
+
+  • Bug-Fix: Schwarz-Weiß statt Bernstein nach Datei > Datenbank laden
+    Beim Laden einer Datenbank, die keinen treeview_theme-Eintrag in
+    zzz_Konfiguration hatte, wurde das aktive Theme (z. B. Bernstein)
+    auf "Standard" (weißer Hintergrund/schwarze Schrift) zurückgesetzt.
+    Ursache: treeview_theme_aus_db_laden() verwendete "standard" als
+    Fallback wenn kein Eintrag gefunden wurde.
+    Fix: Ist kein Theme in der neuen DB gespeichert, bleibt das aktuell
+    aktive Theme erhalten. Nur ein explizit gespeicherter Eintrag
+    ("standard", "bernstein" oder "phosphor") überschreibt das Theme.
+
+  • Bug-Fix: Kettenbeziehungen schlugen fehl wenn Typ/Kette/AnzeigenFelder
+    fehlten (relationen_tabelle_anlegen)
+    relationen_tabelle_anlegen() (aufgerufen beim Laden der Beziehungen
+    in der Hauptdatei) legte die Tabelle zzz_Relationen nur mit den
+    ursprünglichen Basisspalten an – ohne die neueren Spalten Typ, Kette,
+    AnzeigenFelder und QuellFelder. Beim anschließenden SELECT dieser
+    Spalten schlug die Abfrage still fehl (try/except), sodass keine
+    Beziehungen geladen wurden. Fix: die Funktion führt jetzt dieselben
+    ALTER TABLE ADD COLUMN-Migrationen durch wie _relationen_tabelle_sicherstellen()
+    im SQL-Modul.
+
+
+  • Kettenbeziehung: IP-Analyse-Feld — Tabellen-Selektor
+    Im Dialog „Kettenbeziehung hinzufügen/bearbeiten“ wurde der IP-Analyse-
+    Feld-Bereich erweitert. Zuvor zeigte das Feld-Dropdown immer nur die
+    Felder der letzten Zieltabelle. Jetzt gibt es zwei Dropdowns:
+      – Tabelle: Quelltabelle + alle Schritt-Zieltabellen zur Auswahl
+      – Feld:    Felder der gewählten Tabelle
+    Die Tabellen-Auswahl aktualisiert sich automatisch wenn Schritte
+    hinzugefügt, geändert oder gelöscht werden. Gespeichert als
+    „Tabelle.Feld“ in IpSuchFeld (rückwärtskompatibel: alte Einträge
+    mit nur „Feld“ werden automatisch der letzten Tabelle zugeordnet).
+    Die Analyse-SQL verwendet den korrekten JOIN-Alias für die gewählte
+    Tabelle — das IP-Feld muss nicht mehr in der letzten Tabelle liegen.
+
+  • Kettenbeziehung: ▲/▼-Buttons zum Umsortieren der Schritte
+    Im Dialog „Kettenbeziehung hinzufügen/bearbeiten“ hat jede Schritt-
+    Zeile neben dem ✕-Löschen-Button jetzt zwei weitere Buttons:
+      ▲ — Schritt mit dem vorherigen tauschen (nach oben verschieben)
+      ▼ — Schritt mit dem nächsten tauschen (nach unten verschieben)
+    Ermöglicht das Umsortieren der Schrittreihenfolge ohne Löschen und
+    Neuanlegen.
+
+  • Überschneidungen in Kette suchen: Projektprüfung vereinfacht
+    Die Funktion „Überschneidungen in Kette suchen” prüfte bisher ob ein
+    Projekt aktiviert (Kiosk-Modus, aktiv=1 in zzz_Projekte) ist — das
+    erforderte die Admin-Code-Eingabe vor der Nutzung. Da der Kiosk-Modus
+    unabhängig davon ist, ob ein Projekt ausgewählt ist, wurde die Prüfung
+    auf projekt_status[„aktuell”] umgestellt. Es reicht nun, ein Projekt
+    ausgewählt zu haben — es muss nicht aktiviert (gesperrt) sein.
+
+  • Bug-Fix: NameError insert_widget in sql_abfrage_fenster_oeffnen
+    Beim Initialisieren des SQL-Editors nach dem Laden einer Datenbank
+    wurde insert_widget referenziert — ein Name der nicht existiert.
+    Korrekt ist insert_widgetwerte_laden(0) (analog zu
+    update_set_widgetwerte_laden(0), update_where_widgetwerte_laden(0),
+    delete_where_widgetwerte_laden(0)). Das war ein Tippfehler im
+    wiederhergestellten Dateiende nach dem Truncation-Fix vom Vortag.
+
+================================================================================
+GESAMTER FUNKTIONSUMFANG
+================================================================================
+
+--------------------------------------------------------------------------------
+1. PROGRAMMSTART UND DATEI
+--------------------------------------------------------------------------------
+
+  Datei-MenÃ¼:
+    â€¢ DB laden          Ã–ffnet eine SQLite-Datenbankdatei (.db, .sqlite,
+                        .sqlite3). Nach dem Laden wird die Fensterliste
+                        automatisch geÃ¶ffnet. Ist ein Projekt als aktiv
+                        markiert, werden alle Workflow-Fenster automatisch
+                        geÃ¶ffnet und positioniert.
+    â€¢ DB komprimieren   VACUUM: legt automatisch Backup an (Name_backup_Datum.db),
+                        lÃ¤uft in eigenem Thread mit Live-SeitenzÃ¤hler,
+                        zeigt Vorher/Nachher-GrÃ¶ÃŸe, wird in zzz_Logging
+                        dokumentiert.
+    â€¢ Beenden           Anwendung schlieÃŸen.
+
+  Hauptfenster:
+    â€¢ Zeigt alle Tabellen der geladenen Datenbank als scrollbare Liste.
+    â€¢ Klick auf Tabelle Ã¶ffnet Vorschau (asynchrones Laden mit Request-ID-
+      Logik gegen veraltete Ergebnisse).
+    â€¢ Doppelklick auf Tabelle Ã¶ffnet vollstÃ¤ndiges Tabellenfenster.
+
+--------------------------------------------------------------------------------
+2. TABELLE-MENÃœ
+--------------------------------------------------------------------------------
+
+  Tabellenoperationen:
+    â€¢ Tabelle hinzufÃ¼gen       Neue leere Tabelle anlegen.
+    â€¢ Tabelle umbenennen       Tabelle umbenennen (Admin-Code fÃ¼r zzz_-Tabellen).
+    â€¢ Tabelle in DB kopieren   Hinweis: nur innerhalb derselben DB.
+    â€¢ Kopie von Tabelle        Erstellt Kopie mit neuem Namen.
+    â€¢ Tabelle leeren           LÃ¶scht alle Zeilen (Admin-Code fÃ¼r zzz_-Tabellen).
+    â€¢ Tabelle lÃ¶schen          LÃ¶scht Tabelle (nur wenn leer, Admin-Code fÃ¼r
+                               zzz_-Tabellen). Zweistufig: erst leeren, dann
+                               lÃ¶schen.
+
+  Strukturoperationen:
+    â€¢ Header hinzufÃ¼gen        Noch nicht implementiert (Platzhalter).
+    â€¢ PK hinzufÃ¼gen            FÃ¼gt id (INTEGER PRIMARY KEY AUTOINCREMENT) und
+                               datetime (TEXT) als erste zwei Spalten ein.
+                               Falls datetime bereits vorhanden, wird nur id
+                               eingefÃ¼gt. Bestehende Zeilen erhalten sofort den
+                               aktuellen Zeitstempel (kein NULL).
+                               PrÃ¼ft ob bereits ein PK vorhanden ist.
+                               Tabelle wird neu erstellt, Daten werden umkopiert.
+                               Wird in zzz_Logging dokumentiert.
+
+  Systemtabellen verwalten:
+    â€¢ Findings hinzufÃ¼gen      Legt zzz_Findings an (falls nicht vorhanden).
+    â€¢ Findings entfernen       LÃ¶scht zzz_Findings (Admin-Code erforderlich).
+    â€¢ Logging hinzufÃ¼gen       Legt zzz_Logging an (falls nicht vorhanden).
+    â€¢ Logging entfernen        LÃ¶scht zzz_Logging (Admin-Code erforderlich).
+
+--------------------------------------------------------------------------------
+3. TABELLENFENSTER
+--------------------------------------------------------------------------------
+
+  Ã–ffnen:
+    Doppelklick auf Tabelle im Hauptfenster. Bereits offene Tabelle wird
+    in den Vordergrund geholt (kein zweites Fenster).
+
+  Fenster-MenÃ¼ (oben links):
+    â€¢ Als Tabelle speichern    Aktuelle Ansicht (inkl. Filter/Sortierung) als
+                               neue Tabelle speichern.
+    â€¢ Als CSV speichern        Aktuelle Ansicht als CSV-Datei exportieren.
+    â€¢ Tabelle aktualisieren    Tabelle neu laden. Fensterposition und -grÃ¶ÃŸe
+      [F5]                     bleiben erhalten. Auch per F5-Taste aufrufbar.
+    â€¢ SchlieÃŸen                Tabellenfenster schlieÃŸen.
+
+  Daten:
+    â€¢ Blockweises Laden        GroÃŸe Tabellen werden in BlÃ¶cken geladen,
+                               Fortschritt im Fenstertitel sichtbar.
+    â€¢ zzz_Logging / zzz_Debug  Werden automatisch absteigend sortiert
+                               (neueste EintrÃ¤ge oben).
+
+  Sortieren:
+    Klick auf SpaltenÃ¼berschrift sortiert auf- oder absteigend.
+
+  Spaltenbreiten:
+    Werden gemerkt und bei erneutem Ã–ffnen wiederhergestellt.
+
+  Doppelklick auf Zeile:
+    Ã–ffnet Lesefenster mit dem Inhalt der gesamten Zeile.
+
+--------------------------------------------------------------------------------
+4. RECHTSKLICK-MENÃœ IN TABELLENFENSTERN
+--------------------------------------------------------------------------------
+
+  Block 1 â€“ Kopieren:
+    â€¢ Feldinhalt kopieren       Inhalt der angeklickten Zelle.
+    â€¢ Zeile kopieren            Alle Felder der Zeile als Text.
+    â€¢ Zeile als CSV kopieren    Zeile im CSV-Format.
+    â€¢ Header als CSV kopieren   Spaltennamen im CSV-Format.
+    â€¢ Tabelle als CSV kopieren  Gesamte Tabelle als CSV.
+
+  Block 2 â€“ Anzeigen:
+    â€¢ Feldinhalt im Lesefenster anzeigen
+                               Ã–ffnet Lesefenster fÃ¼r die Zelle mit
+                               Navigations-Buttons â–² â–¼ zum BlÃ¤ttern.
+    â€¢ Zeile im Lesefenster anzeigen
+                               Ã–ffnet Lesefenster fÃ¼r die gesamte Zeile.
+
+  Block 3 â€“ Filtern:
+    â€¢ Feldfilter setzen         Filter auf den Inhalt der angeklickten Zelle.
+    â€¢ Feldfilter aufheben       Aktiven Filter entfernen.
+    â€¢ Eindeutige Feldwerte anzeigen
+                               Zeigt alle eindeutigen Werte einer Spalte.
+                               Mit lokalem Filter, Rechtsklick-MenÃ¼ zum
+                               Ãœbernehmen als Hauptfilter oder SQL-Abfrage.
+    â€¢ Auf IP/Netzwerk filtern   Filtert nach IPv4-Adressen im Feld.
+    â€¢ Auf Netzmaske filtern     Filtert nach Netzmasken im Feld.
+
+  Block 4 â€“ IPv4:
+    â€¢ Integer zu IPv4-Adresse   Konvertiert Integer-Wert in IPv4-Darstellung.
+    â€¢ IPv4-Adresse zu Integer    Konvertiert IPv4 in Integer.
+    â€¢ IP-Range aufteilen         Zeigt Start- und End-IP eines Ranges.
+    â€¢ Netzwerk IP oder Maske anzeigen
+                                Ermittelt Netzwerk-IP oder Subnetzmaske.
+
+  Block 5 â€“ Findings / LÃ¶schen:
+    â€¢ Finding hinzufÃ¼gen        Speichert Zelle als Finding in zzz_Findings.
+                               Erfordert PK in der Tabelle.
+                               Bei bestehendem Finding: Info-Meldung,
+                               Dialog mit vorhandener Beschreibung zur
+                               Bearbeitung (UPDATE statt INSERT).
+                               Leere Zellen kÃ¶nnen nicht Ã¼bernommen werden.
+    â€¢ Finding aufrufen          Nur in zzz_Findings: Ã¶ffnet die Original-
+                               Tabelle und springt auf die referenzierte
+                               Zeile (blau markiert, ~800ms VerzÃ¶gerung).
+    â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    â€¢ Zeile lÃ¶schen             LÃ¶scht markierte Zeile Ã¼ber Primary Key.
+                               BestÃ¤tigungsdialog mit Zeilenvorschau.
+                               zzz_-Tabellen: Admin-Code erforderlich.
+                               SQL-Ergebnisfenster: nicht mÃ¶glich.
+                               Ohne PK: Warnung.
+                               Wird in zzz_Logging dokumentiert.
+    â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    â€¢ Feld editieren            Bearbeitet einzelnes Feld direkt in der DB.
+                               Dialog zeigt: Tabelle/PK-Kontext, Feldname
+                               (blau hervorgehoben), Alter Wert (readonly,
+                               direkt aus DB gelesen), Neuer Wert (editierbar,
+                               vorausgefÃ¼llt).
+                               zzz_-Tabellen: Admin-Code ("editieren").
+                               SQL-Ergebnisfenster: nicht mÃ¶glich.
+                               Ohne PK: Warnung.
+                               Kein Update bei unverÃ¤ndertem Wert.
+                               Wird in zzz_Logging mit Alt- und Neuwert
+                               dokumentiert.
+
+  Rechtsklick auf SpaltenÃ¼berschrift:
+    â€¢ Spalte hinzufÃ¼gen        Neue Spalte links oder rechts einfÃ¼gen.
+                               Tabelle wird neu erstellt, Daten umkopiert,
+                               Fensterposition bleibt erhalten.
+    â€¢ Spalte lÃ¶schen           Spalte entfernen mit Dialog und Statistik.
+                               zzz_-Tabellen: Admin-Code erforderlich.
+    â€¢ Alle Spaltennamen        Spaltenbreiten so anpassen, dass alle Namen
+      vollstÃ¤ndig anzeigen     vollstÃ¤ndig lesbar sind.
+
+--------------------------------------------------------------------------------
+5. FINDINGS (zzz_Findings)
+--------------------------------------------------------------------------------
+
+  Zweck:
+    Notizblock fÃ¼r AuffÃ¤lligkeiten in beliebigen Tabellen. Pro Datensatz
+    (identifiziert Ã¼ber Tabellenname + ID-Feld + ID-Wert) kann genau ein
+    Finding gespeichert werden.
+
+  Tabellenstruktur:
+    id               INTEGER PRIMARY KEY AUTOINCREMENT
+    datetime         Zeitstempel
+    TabellenName     Name der Quelltabelle
+    idFeld           Name des PK-Feldes in der Quelltabelle
+    idFeldInhalt     Wert des PK-Feldes (referenziert den Datensatz)
+    Feldname         Name des auffÃ¤lligen Feldes
+    FeldInhalt       Inhalt des auffÃ¤lligen Feldes
+    KurzeBeschreibung Freitext-Notiz des Benutzers
+
+    UNIQUE(TabellenName, idFeld, idFeldInhalt) â€“ ein Finding pro Datensatz.
+
+  Voraussetzungen:
+    Die Quelltabelle muss einen Primary Key haben. Ohne PK erscheint
+    die Meldung "Bitte zuerst PK hinzufÃ¼gen (Tabelle-MenÃ¼ â†’ PK hinzufÃ¼gen)".
+
+  Finding hinzufÃ¼gen:
+    Rechtsklick auf eine (nicht leere) Zelle â†’ "Finding hinzufÃ¼gen".
+    Felder TabellenName, idFeld, idFeldInhalt, Feldname, FeldInhalt werden
+    automatisch befÃ¼llt. KurzeBeschreibung wird Ã¼ber eine Combobox eingegeben:
+    alle bereits vorhandenen Beschreibungen erscheinen als Dropdown-Auswahl,
+    eigene Eingabe bleibt jederzeit mÃ¶glich.
+
+  Finding bearbeiten:
+    Nochmaliger "Finding hinzufÃ¼gen" auf denselben Datensatz Ã¶ffnet den
+    Dialog mit der vorhandenen Beschreibung zur Bearbeitung.
+
+  Finding aufrufen:
+    In zzz_Findings rechtsklicken â†’ "Finding aufrufen": Ã¶ffnet die
+    Original-Tabelle und markiert die referenzierte Zeile blau.
+
+  Schutz:
+    zzz_Findings ist geschÃ¼tzt. LÃ¶schen, Leeren, Umbenennen, Zeile lÃ¶schen
+    und Feld editieren nur mit Admin-Code.
+
+--------------------------------------------------------------------------------
+6. SQL-ABFRAGEFENSTER
+--------------------------------------------------------------------------------
+
+  Struktur:
+    Notebook mit Reitern: SELECT, UPDATE, INSERT, DELETE, PROJEKT, EINSTELLUNGEN.
+
+  SELECT-Reiter:
+    â€¢ Tabellenauswahl per Dropdown (SELECT FROM).
+    â€¢ Felder-Liste mit Doppelklick fÃ¼gt Feldname in SQL-Editor ein.
+    â€¢ Eingabefelder fÃ¼r WHERE-Bedingungen.
+    â€¢ Beziehungen und WHERE-Bedingungen als JSON speicherbar.
+    â€¢ Feldfilter als Text-Widget.
+    â€¢ Gespeicherte Abfragen laden/speichern.
+    â€¢ SQL prÃ¼fen: erkennt SELECT und WITH/CTE, blockiert
+      INSERT/UPDATE/DELETE/DROP/ALTER.
+    â€¢ Mehrfach-Statements und Semikolons in Strings werden korrekt erkannt.
+    â€¢ FÃ¼hrende Kommentarzeilen blockieren SELECT-Erkennung nicht.
+    â€¢ ORDER BY-Bereich: Tabelle/Feld per Dropdown, ASC/DESC, mehrere
+      EintrÃ¤ge; "In Statement einfÃ¼gen" und "Alle einfÃ¼gen". Wird
+      als JSON in zzz_SQL_ABFRAGEN gespeichert und wiederhergestellt.
+    â€¢ Haupttabelle (SELECT FROM) wird mit gespeicherter Abfrage
+      gespeichert und beim Laden wiederhergestellt.
+
+  SQL-AusfÃ¼hrung:
+    â€¢ AusfÃ¼hrung in Transaktion (BEGIN TRANSACTION / COMMIT).
+    â€¢ Manuelle BEGIN/COMMIT-Anweisungen werden automatisch entfernt.
+    â€¢ Tippfehler-PrÃ¼fung (z.B. "comit").
+    â€¢ WAL Checkpoint (PRAGMA wal_checkpoint(FULL)) nach COMMIT.
+    â€¢ AusfÃ¼hrungszeit wird gemessen und angezeigt.
+    â€¢ AusfÃ¼hrliches Logging: SQL-Statement + Ergebnis in zzz_Logging.
+
+  Ergebnisfenster:
+    â€¢ Sortieren per Spaltenklick.
+    â€¢ VollstÃ¤ndiges Rechtsklick-MenÃ¼ (Kopieren, Anzeigen, Filtern, IPv4).
+    â€¢ Finding hinzufÃ¼gen, Feld editieren, Zeile lÃ¶schen: erscheinen im
+      MenÃ¼, sind aber in SQL-Ergebnisfenstern nicht ausfÃ¼hrbar (Info-Meldung).
+    â€¢ Als neue Tabelle speichern.
+    â€¢ Spaltenbreiten werden gemerkt.
+    â€¢ Farbstreifen erscheint korrekt oben unter der MenÃ¼leiste.
+
+  EINSTELLUNGEN-Reiter:
+    Breiteneinstellungen (persistent in zzz_Konfiguration):
+      â€¢ Listenbreite (px)        Breite des linken Panels inkl. aller Treeviews.
+      â€¢ Eingabebreite (Zeichen)  Breite der Eingabefelder fÃ¼r Werte/WHERE.
+      â€¢ Tabellenbreite (Zeichen) Breite der Tabellen-Comboboxen.
+      â€¢ Feldbreite (Zeichen)     Breite der Feld-Comboboxen.
+
+    Fensterrahmen-Farbstreifen (persistent in zzz_Konfiguration):
+      â€¢ Streifen 1 / Streifen 2 / Streifen 3
+        Je unabhÃ¤ngig wÃ¤hlbar aus 10 Farben:
+          Rot Â· Gelb Â· Hellblau Â· Orange Â· Dunkelblau Â·
+          Helles GrÃ¼n Â· Dunkles GrÃ¼n Â· Magenta Â· Bernstein Â· Phosphor-GrÃ¼n
+        Auswahl Ã¼ber farbige Quadrate (indicatoron=False-Radiobuttons),
+        gedrÃ¼ckt = aktiv. Deaktivierung Ã¼ber "â€”"-Button.
+      â€¢ StreifenhÃ¶he (px): per Spinbox 1â€“20 px einstellbar (Standard 4 px).
+      â€¢ "Anwenden" speichert und aktualisiert sofort alle offenen Fenster.
+
+    Fensterliste-Farben (persistent in zzz_Konfiguration):
+      â€¢ Hellblau   â€“ Hintergrund Kopf, Treeview, Buttons
+      â€¢ Dunkelblau â€“ Schriftfarbe
+      â€¢ Orange     â€“ Hintergrund Hauptbereich, Auswahl-Markierung
+        Jede Rolle unabhÃ¤ngig aus der gleichen 10-Farben-Palette wÃ¤hlbar.
+      â€¢ "Anwenden" schlieÃŸt und Ã¶ffnet die Fensterliste sofort neu.
+
+    Tabellen-Theme / Dunkel-Modus (persistent in zzz_Konfiguration):
+      â€¢ Standard       WeiÃŸer Hintergrund, schwarze Schrift
+      â€¢ Bernstein      Schwarzer Grund, bernsteinfarbene Schrift (#FFBF00)
+      â€¢ Phosphor-GrÃ¼n  Schwarzer Grund, phosphorgrÃ¼ne Schrift (#33FF33)
+        Gilt app-weit: alle tk- und ttk-Widgets in allen Fenstern werden
+        rekursiv eingefÃ¤rbt. Die Fensterliste und die drei Farbstreifen
+        bleiben dabei unverÃ¤ndert.
+        Theme-Buttons in den jeweiligen Farben gestaltet; sofortige
+        Anwendung per Klick, kein separater â€žAnwenden"-Button.
+        Beim nÃ¤chsten DB-Laden automatisch wiederhergestellt.
+
+  Funktionsvorlagen:
+    â€¢ ipv4_to_int, ip_range_start, ip_range_end und weitere UDFs
+      als Vorlagen einfÃ¼gbar.
+    â€¢ Vertikaler Scrollbalken fÃ¼r Funktionsliste.
+    â€¢ Doppelklick auf Funktion ersetzt Feldname automatisch.
+
+  SQLite-UDFs (registriert beim Öffnen der DB-Verbindung):
+    • ipv4_to_int(ip)           IPv4-String zu Integer (NULL bei ungültigem Wert).
+    • ip_range_aufteilen(range) Start- und Endadresse als lesbaren String:
+                                'Start-Ende    X - Y' oder 'Start    X'
+                                oder 'ERROR [IP-Range]: ...'
+    • ip_range_start(range)     Erste IP eines IP-Ranges (NULL bei Fehler).
+    • ip_range_end(range)       Letzte IP eines IP-Ranges (NULL bei Fehler).
+    • hat_ip(text)              Erste gefundene IPv4-Adresse im Text
+                                (auch 3-Oktet-IPs; NULL wenn nicht gefunden).
+    • hat_netzmaske(text)       Letzte gefundene CIDR-Maske (/0–/32) im Text
+                                (NULL wenn nicht gefunden).
+    • ip_in_range_pruefen(ip, maske, ip_range)
+                                Prüft ob ip im Bereich ip_range liegt.
+                                Rückgabe:
+                                  'OK – Nutzbare Hosts des X/N-Netzes (...) ...'
+                                  'Hinweis [Vorgabe]: IP-Range sehr groß ...'
+                                  'Hinweis [Oktett]: IP-Adresse fehlt N Oktett ...'
+                                  'ERROR [Kategorie]: ...'
+                                Für prefix < /31: nutzbare Hosts (ohne
+                                Netzadresse und Broadcast) werden geprüft.
+
+--------------------------------------------------------------------------------
+7. CSV
+--------------------------------------------------------------------------------
+
+  CSV-MenÃ¼:
+    â€¢ CSV Ã¶ffnen               CSV-Datei laden und als Tabelle anzeigen.
+    â€¢ CSV mit Windows-Notepad Ã¶ffnen
+    â€¢ CSV mit Notepad++ Ã¶ffnen
+
+  CSV-Fenster:
+    â€¢ VollstÃ¤ndiges Rechtsklick-MenÃ¼.
+    â€¢ Textwrap: pro Spalte ein- und ausschaltbar, alle Spalten aufheben.
+    â€¢ Zellinhalt im Lesefenster anzeigen (mit â–² â–¼ Navigation).
+    â€¢ Feldfilter.
+    â€¢ QUOTE_ALL Modus, freie Anzahleingabe.
+    â€¢ Als SQL-Tabelle speichern.
+    â€¢ Als CSV speichern.
+
+  Textwrap (gui-Modul):
+    â€¢ Konfigurierbarer Wrap nach Zeichenanzahl.
+    â€¢ Strukturierte Texte mit Hierarchie-EinrÃ¼ckung (`:`, `::`, `:::`).
+    â€¢ Wrap-Status wird pro Spalte gespeichert.
+
+--------------------------------------------------------------------------------
+8. SYSTEMTABELLEN (zzz_)
+--------------------------------------------------------------------------------
+
+  Alle zzz_-Tabellen sind geschÃ¼tzt:
+    Umbenennen, Kopieren, Leeren, LÃ¶schen, Zeile lÃ¶schen, Spalte lÃ¶schen
+    und Feld editieren erfordern den Admin-Code (Standard: 4711).
+
+  zzz_Logging:
+    Felder: id, datetime, status, meldung
+    Protokolliert alle relevanten Aktionen:
+      Tabellen-Operationen, SQL-AusfÃ¼hrungen, Spalten-Operationen,
+      Findings, Zeile lÃ¶schen, Feld editieren, DB laden, VACUUM.
+    EinrÃ¼ckungskonvention: ". " Unterdetail, ".. " weiteres Detail.
+    Wird im Hauptfenster und Tabellenfenster absteigend sortiert angezeigt.
+
+  zzz_Debug:
+    Felder: id, datetime, kategorie, meldung
+    Technische Debug-Ausgaben der Anwendung.
+    Maximal 10.000 EintrÃ¤ge, Ã¤ltere werden automatisch gelÃ¶scht.
+    Absteigend sortiert angezeigt.
+
+  zzz_Konfiguration:
+    Felder: id, datetime, bereich, schluessel, wert
+    UNIQUE(bereich, schluessel).
+    Speichert FenstergrÃ¶ÃŸen, Positionen, Spaltenbreiten und Einstellungen.
+    Bereich "SQL-Fenster": Breiteneinstellungen, Rahmenfarben (rahmenfarbe,
+    rahmenfarbe2, rahmenfarbe3, rahmenhoehe), Fensterliste-Farbwahl-Cache
+    (fl_hellblau, fl_dunkelblau, fl_orange), Tabellen-Theme (treeview_theme).
+    Bereich "Fensterliste": aktive Fensterliste-Farben (farbe_hellblau,
+    farbe_dunkelblau, farbe_orange).
+    Bereich "Projekt-Layout:<projektname>": Fensterposition/-grÃ¶ÃŸe je Projekt.
+    Bei verlorener UNIQUE-Constraint: automatische Reparatur beim nÃ¤chsten Start.
+
+  zzz_SQL_ABFRAGEN:
+    Gespeicherte SQL-Abfragen mit Beziehungen und WHERE-Bedingungen (JSON).
+    UnterstÃ¼tzt SELECT, UPDATE, INSERT, DELETE.
+
+  zzz_Projekte:
+    Projektverwaltung. Nur ein Projekt gleichzeitig aktiv.
+    Bei aktivem Projekt: Tabellen/CSV/SQL ausgeblendet,
+    Adminzugang Ã¼ber MenÃ¼punkt freigebbar.
+
+  zzz_Projekt_Workflow:
+    Felder: id, datetime, projektname, position, typ, name
+    Speichert den Workflow (geordnete Liste von Tabellen, SQL-Abfragen und
+    Kettenbeziehungen) fÃ¼r jedes Projekt. Position bestimmt die
+    Anzeigereihenfolge.
+    Typ-Werte: "Tabelle", "SQL-Abfrage" oder "Kette".
+    Bei Typ "Kette": name enthÃ¤lt die ID der Beziehung aus zzz_Relationen
+    (als String); die Anzeige im Workflow-Treeview lÃ¶st die Bezeichnung
+    automatisch auf.
+
+  zzz_Findings:
+    Siehe Abschnitt 5 â€” Findings.
+
+  zzz_Relationen:
+    Felder: id, datetime, Projekt, Bezeichnung, QuellTabelle, QuellFeld,
+            ZielTabelle, ZielFeld, Reihenfolge, Typ, Kette,
+            AnzeigenFelder, QuellFelder
+    UNIQUE(Projekt, QuellTabelle, QuellFeld, ZielTabelle, ZielFeld).
+    Speichert Tabellenbeziehungen (einfach und Kette) pro Projekt.
+    Typ:           "1:1", "1:N", "N:1" oder "Kette".
+    Kette:         JSON-Schrittkette für Kettenbeziehungen (optional).
+    AnzeigenFelder: kommagetrennte Felder der Zieltabelle (leer = alle).
+    QuellFelder:   kommagetrennte Felder der Quelltabelle (leer = alle).
+    Wird automatisch angelegt, wenn der PROJEKT-Reiter geöffnet wird.
+    Migration: Typ, Kette, AnzeigenFelder und QuellFelder werden per
+    ALTER TABLE ADD COLUMN automatisch in bestehende Tabellen nachgerüstet.
+    Schutz: Admin-Code erforderlich für Löschen, Leeren, Umbenennen,
+    Feld editieren (identisch zu zzz_Findings und zzz_Logging).
+
+--------------------------------------------------------------------------------
+9. FENSTERVERWALTUNG
+--------------------------------------------------------------------------------
+
+  Fensterliste:
+    â€¢ MenÃ¼leisten-Befehl "Fensterliste".
+    â€¢ Ã–ffnet automatisch beim Laden einer Datenbank.
+    â€¢ Zeigt alle offenen Fenster der Anwendung.
+    â€¢ GrÃ¶ÃŸe und Position werden in zzz_Konfiguration gespeichert.
+    â€¢ Hauptfenster-Titel wird mit Registry synchronisiert.
+    â€¢ Versionsnummer im Fenstertitel sichtbar.
+
+  Fensterregistrierung:
+    Alle Fenster werden zentral registriert und deregistriert.
+    Fensterliste bleibt dadurch immer aktuell.
+
+  Ansicht-MenÃ¼ (in jedem Fenster):
+    â€¢ Maximieren / Fullscreen.
+    â€¢ 3-Zeilen-HÃ¶he speichern und anwenden.
+    â€¢ FenstergrÃ¶ÃŸen und -positionen werden in zzz_Konfiguration gemerkt.
+
+  Fensterrahmen:
+    Jedes Anwendungsfenster kann bis zu drei farbige Streifen oben unter
+    der MenÃ¼leiste anzeigen. Konfiguration im EINSTELLUNGEN-Reiter des
+    SQL-Fensters. Palette: 10 Farben (Rot, Gelb, Hellblau, Orange,
+    Dunkelblau, Helles GrÃ¼n, Dunkles GrÃ¼n, Magenta, Bernstein,
+    Phosphor-GrÃ¼n). HÃ¶he konfigurierbar (1â€“20 px, Standard 4 px).
+
+  Fensterliste-Farben:
+    Die drei Farbrrollen der Fensterliste (Hellblau, Dunkelblau, Orange)
+    sind im EINSTELLUNGEN-Reiter unabhÃ¤ngig konfigurierbar.
+    Bei Ã„nderung wird die Fensterliste sofort neu geÃ¶ffnet.
+    Gespeichert in zzz_Konfiguration, Bereich "Fensterliste".
+
+--------------------------------------------------------------------------------
+10. PROJEKTMODUS
+--------------------------------------------------------------------------------
+
+  Zweck:
+    EingeschrÃ¤nkter Modus fÃ¼r spezifische Arbeitskontexte.
+
+  Verhalten bei aktivem Projekt:
+    â€¢ Tabellen-, CSV- und SQL-MenÃ¼eintrÃ¤ge ausgeblendet.
+    â€¢ Adminzugang Ã¼ber eigenen MenÃ¼punkt freischaltbar.
+    â€¢ Logging-Tabellen bleiben sichtbar.
+
+  Projektverwaltung:
+    â€¢ Nur ein Projekt gleichzeitig aktiv.
+    â€¢ Aktivieren / Deaktivieren Ã¼ber Checkbox "aktiv" im SQL-Fenster,
+      Reiter PROJEKT.
+    â€¢ Projektliste links zeigt Statusspalte: "âœ” aktiv" oder "nicht aktiv".
+    â€¢ Bei aktivem Projekt: HauptmenÃ¼ zeigt â— Projektname als klickbaren Eintrag.
+    â€¢ Gespeichert in zzz_Projekte (Spalte aktiv = 0/1).
+
+  Projekt-Workflow:
+    â€¢ Im Reiter PROJEKT: Workflow-Treeview mit geordneter Liste von Tabellen,
+      SQL-Abfragen und Kettenbeziehungen (Typ: “Tabelle”, “SQL-Abfrage”, “Kette”).
+    â€¢ Rechtsklick-MenÃ¼: Tabelle hinzufÃ¼gen, SQL-Abfrage hinzufÃ¼gen,
+      â›”  Kette hinzufÃ¼gen (zeigt alle Kettenbeziehungen des Projekts zur Auswahl),
+      Eintrag entfernen, â†’ Hoch, â†” Runter.
+    â€¢ Doppelklick Ã¶ffnet das zugehÃ¶rige Fenster:
+        Tabelle     â†’ Tabellenfenster
+        SQL-Abfrage â†’ SQL-Ergebnisfenster
+        Kette       â†’ Master-Detail-Fenster (Quelltabelle oben, Zieltabelle unten)
+    â€¢ Reihenfolge wird in zzz_Projekt_Workflow gespeichert.
+    â€¢ Workflow lÃ¤dt automatisch bei Projektauswahl und bei neuem Projekt.
+
+  Projekt-Layout (Fensterpositionierung):
+    â€¢ Button "Position der Projekt-Fenster merken" speichert Position und
+      GrÃ¶ÃŸe aller offenen Workflow-Fenster sowie des Hauptfensters.
+    â€¢ Beim Aktivieren eines Projekts oder beim DB-Laden werden alle
+      Workflow-Fenster automatisch geÃ¶ffnet und positioniert.
+    â€¢ Hauptfenster-Zustand (normal/maximiert) wird gespeichert und
+      wiederhergestellt.
+    â€¢ Jedes Projekt hat sein eigenes Layout in zzz_Konfiguration
+      (Bereich "Projekt-Layout:<projektname>").
+    â€¢ Nur Ã¼ber Admin-/SQL-Fenster zugÃ¤nglich.
+
+  Tabellenbeziehungen (einfach und Kette, pro Projekt):
+    • Im Reiter PROJEKT: Beziehungs-Treeview mit Spalten Bezeichnung, Typ
+      und Pfad (QuellTabelle → … → ZielTabelle).
+    • Rechtsklick-Menü:
+        Einfache Beziehung hinzufügen  (A → B, Typ 1:1 / 1:N / N:1)
+        Kettenbeziehung hinzufügen     (A → B → C → …, mehrstufig)
+        Beziehung bearbeiten
+        Beziehung löschen
+    • Beziehungen werden projektspezifisch in zzz_Relationen gespeichert.
+    • Kettenbeziehungen: QuellFelder und AnzeigenFelder (Zieltabelle)
+      konfigurierbar – steuern welche Spalten im Master-Detail-Fenster
+      angezeigt werden (leer = alle Felder).
+    • Rechtsklick in Tabellenfenstern → "Verknüpfte Datensätze anzeigen":
+      Für die markierte Zeile werden alle passenden Ziel-Datensätze
+      aus den definierten Beziehungen in einem Ergebnisfenster angezeigt
+      (ein Treeview-Block pro Beziehung, scrollbar).
+    • Ketten-Fenster (Typ "Kette" im Workflow): Master-Detail-Toplevel.
+      Oben: Quelltabelle mit gewählten QuellFelder-Spalten.
+      Unten: Zieltabelle, aktualisiert sich per Ketten-JOIN beim Klick oben.
+      Spaltenbreiten: automatisch per Schrift-Metrik, kompakt.
+      Vollständig in Positions-/View-Funktionen integriert.
+    • Nur bei aktivem Projekt verfügbar.
+    • zzz_Relationen ist admin-geschützt (wie alle zzz_-Tabellen).
+
+--------------------------------------------------------------------------------
+11. ADMIN-FUNKTIONEN
+--------------------------------------------------------------------------------
+
+  Admin-Code: pbkdf2_hmac-Hash (SHA-256, 100.000 Runden, 16-Byte-Salt).
+    Wird pro Datenbank in zzz_Konfiguration (Bereich "Admin") gespeichert.
+    Ersteinrichtung beim ersten Admin-Zugriff auf eine neue DB (Code 2× eingeben).
+    Ändern über Datei-Menü → "Admin-Code ändern…" (alter Code + neuer Code).
+    Kein Klartext im Quellcode.
+
+  Aktionen die Admin-Code erfordern:
+    Auf alle zzz_-Tabellen (geschÃ¼tzte Tabellen):
+      â€¢ umbenennen
+      â€¢ kopieren
+      â€¢ leeren
+      â€¢ lÃ¶schen  (Tabelle und einzelne Zeilen)
+      â€¢ editieren (Feld editieren)
+      â€¢ Spalte lÃ¶schen
+
+  Admin-Code-Dialog:
+    Zeigt Tabellenname und Aktion, Eingabe verdeckt (show="*").
+
+--------------------------------------------------------------------------------
+12. TECHNISCHE DETAILS
+--------------------------------------------------------------------------------
+
+  Dateistruktur:
+    SqlGui_Vx_x_xx.py       Hauptdatei (~5.300+ Zeilen)
+    SqlGui_Vx_x_xx_gui.py   GUI-Hilfsfunktionen, CSV-Anzeige, Textwrap
+    SqlGui_Vx_x_xx_sql.py   SQL-Modul, Abfragen, UDFs, Projekte, EINSTELLUNGEN
+    SqlGui_Vx_x_xx_text.py  Textformatierung, Struktur-Hierarchie
+    SqlGui_Vx_x_xx_udf.py   SQLite-UDFs (IPv4-Funktionen, ip_in_range_pruefen)
+
+  Technologie:
+    Python / Tkinter / SQLite3
+
+  Datenbankverbindungen:
+    Werden fÃ¼r jede Operation frisch geÃ¶ffnet und sofort geschlossen.
+    SQLite-UDFs werden bei jeder Verbindung neu registriert.
+
+  Asynchrones Laden:
+    Tabellenfenster laden Daten blockweise in eigenen Threads.
+    Request-ID-Logik verhindert veraltete Ergebnisse.
+    Chunk-GrÃ¶ÃŸe steuerbar (G_chunk_groesse).
+
+  Fehlerbehandlung:
+    Tkinter Exception Handler Ã¼berschrieben fÃ¼r saubere Fehlermeldungen.
+    Alle kritischen Operationen mit try/except abgesichert.
+    Fehler werden in zzz_Logging mit status=1 protokolliert.
+
+  Modul-Initialisierung:
+    Das SQL-Modul wird Ã¼ber sql_modul_initialisieren() mit allen benÃ¶tigten
+    Callbacks aus der Hauptdatei versorgt. Dadurch sind AbhÃ¤ngigkeiten
+    explizit und keine globalen Importe nÃ¶tig.
+
+  Hilfsfunktionen:
+    sql_identifier(name)           Sicheres SQL-Quoting ("name").
+    sql_name_ok(name)              Validierung von Bezeichnernamen.
+    eindeutigen_tabellennamen_vorschlagen()
+    eindeutigen_dateinamen_vorschlagen()
+
+================================================================================
+VERSIONSHISTORIE (KurzÃ¼bersicht)
+================================================================================
+
+  4.3.39   Grundstruktur: Tabellen, CSV, SQL, IPv4-UDFs, zzz_Logging
+  4.3.47   Schutz fÃ¼r zzz_-Tabellen, SQL-Fenster verbessert
+  4.3.48   SQL-PrÃ¼fung fÃ¼r WITH/CTE, Mehrfach-Statements
+  4.3.49   Eindeutige-Werte-Fenster erweitert, SQL direkt speichern
+  4.4.35   Dreiteilung in _gui.py / _text.py, robuste Vorschau, Fensterliste
+  4.4.36   Zweistufiger LÃ¶schschutz (erst leeren, dann lÃ¶schen)
+  4.6.14   Vierteilung mit _sql.py, zzz_Debug, SQL-Notebook, Ergebnisfenster
+  4.6.39   VACUUM, RechtsklickmenÃ¼s vereinheitlicht, IPv4-Filter, Projektmodus
+  4.6.40   RechtsklickmenÃ¼s neu strukturiert (5 BlÃ¶cke), Netzwerk-Filter
+  4.6.41   CSV-Bugs behoben, neue UDFs hat_ip/hat_netzmaske, Scrollbalken
+  4.6.42   SQL breiter, Transaktionen, AusfÃ¼hrungszeit, Spaltenbreiten merken
+  4.6.43   WAL Checkpoint, Spalte lÃ¶schen, Tkinter Exception Handler
+  4.6.44   Findings, PK hinzufÃ¼gen, Zeile lÃ¶schen, Feld editieren, F5-Refresh,
+           Fensterliste Auto-Start beim DB-Laden
+  4.6.45   Admin-Code fÃ¼r Zeile lÃ¶schen in zzz_-Tabellen
+  4.6.46   PK hinzufÃ¼gen id+datetime (mit sofortigem Zeitstempel), Spalte lÃ¶schen
+           Admin-Code fÃ¼r zzz_-Tabellen, Spaltenreihenfolge Systemtabellen,
+           Combobox fÃ¼r KurzeBeschreibung, UNIQUE-Repair zzz_Konfiguration,
+           Projektstatus aktiv/nicht aktiv mit Checkbox und Statusliste
+  4.6.47   SQL-Fenster Breiteneinstellungen (4 Spinboxes, persistent),
+           "In Statement einfÃ¼gen"-Buttons vereinheitlicht (width=18),
+           Projektkopf kompaktes Layout, PROJEKT-Reiter Workflow-Treeview
+           mit zzz_Projekt_Workflow (Tabellen/SQL hinzufÃ¼gen, sortieren, entfernen)
+  4.6.49   Workflow-Layout verbessert (AbstÃ¤nde, Name-Spalte breiter),
+           EINSTELLUNGEN-Reiter im SQL-Fenster (Breiteneinstellungen dorthin
+           verschoben), Typ "SQL-Abfrage" (war "SQL"), Doppelklick auf
+           Workflow-Eintrag Ã¶ffnet Fenster, "Position merken"-Button,
+           Projekt-Layout: Fenster automatisch Ã¶ffnen und positionieren
+           beim Aktivieren und beim DB-Laden, Farbstreifen oben in allen
+           Fenstern (1 Streifen, konfigurierbar im EINSTELLUNGEN-Reiter)
+  4.6.51   Drei unabhÃ¤ngige Farbstreifen, 10-Farben-Palette (Quadrate ohne Text,
+           +Phosphor-GrÃ¼n), StreifenhÃ¶he per Spinbox, Fensterliste-Farben
+           (alle 3 Rollen) im EINSTELLUNGEN-Reiter konfigurierbar,
+           Fullscreen-Fokus-Bug behoben, MinimalgrÃ¶ÃŸen reduziert,
+           zzz_Findings absteigend sortiert, Fensterliste Typ-Spalte gekÃ¼rzt,
+           Projekttitel in Fensterliste-Titelzeile, Vorschau-Titel bei
+           aktivem Projekt unterdrÃ¼ckt, Bug-Fix Streifen 2+3 nicht sichtbar,
+           Bug-Fix Hauptfenster-Streifen nach DB-Laden (db_laden ruft
+           rahmenfarbe_alle_fenster_aktualisieren), Buttons â€žAdmin SQL Ansicht
+           laden/speichern" (umbenannt), Projekt-Views: mehrere benannte
+           Fensterlayouts pro Projekt, View Speichern-Button, UntermenÃ¼
+           â— Projektname in Haupt- und Fensterliste-MenÃ¼, View-Verwaltung im
+           PROJEKT-Reiter, Umbenennung SQL-Abfrage â†’ SQL Editor,
+           Tabellen-Theme Bernstein/Phosphor-GrÃ¼n (styled Buttons, Auto-Apply),
+           vollstÃ¤ndiger Dunkel-Modus (alle tk/ttk-Widgets app-weit, inkl.
+           MenÃ¼s), numerische Spalten-Sortierung, alle tk.Scrollbar â†’
+           ttk.Scrollbar, Bug-Fix Farbquadrate + Theme-Buttons (_no_theme),
+           Bug-Fix Fensterliste beim Theme-Wechsel, Bug-Fix Combobox/Entry/
+           readonly-Hintergrund im Dunkel-Modus,
+           ORDER BY im SELECT-Reiter (Dropdown ASC/DESC, mehrere Einträge,
+           JSON-Speicherung), Haupttabelle gespeichert/geladen (neue
+           DB-Spalte "haupttabelle"), UDF-Modul _udf.py (alle UDFs
+           ausgelagert), neue UDF ip_in_range_pruefen (3 Argumente),
+           UDF-Registrierung mit individueller Argumentanzahl,
+           Funktionsvorlagen vereinheitlicht (Funktion(Feld) AS Alias),
+           Bug-Fix ORDER BY Feld-Dropdown leer, Bug-Fix Haupttabelle
+           nicht wiederhergestellt, Bug-Fix ORDER BY-Präfix fehlend,
+           neue UDF ip_range_aufteilen (Start-Ende / Start Format),
+           ip_in_range_pruefen Fehler-Klassifikation (ERROR [Kategorie]:),
+           Hinweis [Vorgabe] bei IP-Range > 65.534 Hosts (konform vs. unüblich),
+           Range-Info bei fehlender IP, OK-Meldung mit Netz+Range-Detail
+           (SCCM-konform), Nutzbare-Hosts-Prüfung für prefix < /31
+           (netz_start+1 / netz_end-1 statt vollständiger Netzblock),
+           Hinweis/ERROR [Oktett] bei unvollständigen IP-Adressen (.0-Annahme),
+           Funktionsvorlagen: sprechende Platzhalter + Rückgabewert-Info,
+           ip_range_aufteilen als neue Vorlage, Applikation-beenden-Dialog
+           bei ungespeicherten SQL-Änderungen (Ja/Nein/Abbrechen, auch X-Button),
+           SQL Ergebnisfenster Rechtsklick überarbeitet (Spaltenüberschrift,
+           Block 2 + Block 4), Eindeutige Feldwerte: Prefix-Spinbox mit
+           Auto-Apply, Rechtsklick + Doppelklick für Filter, größere Pfeiltasten,
+           Workflow-Fenster vollständiges Rechtsklick-Menü (4 Blöcke),
+           automatische Spaltenbreiten beim Laden (Schrift-Metrik, max 200 Zeilen),
+           ip_in_range_pruefen: IP-fehlt alle Hinweis mit | Trenner,
+           Start-Ende identisch in ip_range_aufteilen,
+           Vorgabe-Kontext bei ungültiger IP-Range,
+           Hinweis [Oktett] bei außerhalb 0–255 mit Range-Info,
+           3-Oktett + Maske → vollständige Netzprüfung,
+           3-Oktett ohne Maske → automatische Prefix-Suche (engster passender Prefix),
+           Zeile im Lesefenster: ▲/▼ Navigation + Pfeiltasten,
+           Tabellenbeziehungen (zzz_Relationen): 1:N pro Projekt,
+           Rechtsklick "Verknüpfte Datensätze anzeigen" in Tabellenfenstern,
+           Admin-Schutz zzz_Relationen (in G_GESCHUETZTE_TABELLEN),
+           Finding hinzufügen aus SQL-Ergebnis: Tabellenname-Dropdown
+           gefiltert auf SQL-Abfrage-Tabellen (Regex, Fallback auf alle DB),
+           ip_in_range_pruefen: Netz-Mismatch → Hinweis statt ERROR,
+           ip_in_range_pruefen: Labels [Netzadresse] [Broadcast]
+           [Einzeladresse] [Netz-Mismatch] statt generischem [Prüfung],
+           Maske-Erklärung in Meldungen (/{N}-Maske auf {IP} ergibt Netz),
+           ip_range_aufteilen: "Start/Einzeladresse  X  (ohne Maske nicht
+           eindeutig bestimmbar)" statt "Start    X",
+           Kettenbeziehung: QuellFelder auswählbar (neue DB-Spalte QuellFelder,
+           linke Listbox im Dialog, Migration automatisch),
+           Workflow-Typ "Kette": Master-Detail-Fenster (⛓ Kette hinzufügen,
+           Quelltabelle oben / Zieltabelle unten, Ketten-JOIN per Klick,
+           automatische Spaltenbreiten per Schrift-Metrik, vollständig in
+           Positions-/View-Funktionen integriert),
+           Bug-Fix: Admin Ansicht laden im Hauptfenster-Menü ohne Wirkung
+           (ignore_startview=True an beiden Aufrufstellen),
+           Bug-Fix: Schwarz-Weiß statt Bernstein nach Datei > Datenbank laden
+           (treeview_theme_aus_db_laden kein Reset mehr wenn kein Eintrag),
+           Bug-Fix: Kettenbeziehungen schlugen fehl (relationen_tabelle_anlegen
+           fehlten ALTER TABLE Migrationen für Typ/Kette/AnzeigenFelder/QuellFelder),
+           Ketten-Fenster: Fenstertitel jetzt mit Zusatz "— Kette —" (Fenstertyp
+           auf Anhieb erkennbar), vollständiges Rechtsklick-Menü Block 1–5 auf
+           Quelltabelle und Zieltabelle (Kopieren, Anzeigen, Filtern, IPv4,
+           Finding hinzufügen; Spaltenüberschrift-Menü: Spaltenbreiten anpassen),
+           Schritte aktivieren/deaktivieren: Im Ketten-Dialog pro Schritt Checkbox
+           "Im Ergebnis anzeigen" + Radiobutton "Felder bearbeiten", die rechte
+           Listbox zeigt jeweils die Felder des gewählten Schritts (pro Schritt
+           speicherbar), Quelltabelle nicht im Ergebnis; im Ketten-Fenster
+           Live-Checkbox-Leiste über dem Ergebnis zum An-/Abschalten einzelner
+           Schritte, kombiniertes Ergebnis aus mehreren Schritt-Tabellen in einem
+           Treeview, Spaltenname bei Konflikt mit Tabellenpräfix ("Tabelle.Feld"),
+           rückwärtskompatibel (alte Datensätze ohne aktiv/felder-Felder öffnen
+           automatisch mit letztem Schritt aktiv)
+
+================================================================================
+
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 

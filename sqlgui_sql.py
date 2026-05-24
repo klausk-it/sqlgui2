@@ -91,6 +91,10 @@ admin_code_fuer_aktion_pruefen = lambda tabellenname, aktion: True   # wird durc
 _SQL_KONFIG_BEREICH = "SQL-Fenster"
 _PROJEKT_LAYOUT_BEREICH = "Projekt-Layout"
 
+# Modul-weit sichtbares ausgewähltes Projekt (unabhängig vom Kiosk-Aktivierungsstatus).
+# Wird von sql_abfrage_fenster_oeffnen() bei Projektwechsel aktualisiert.
+_G_ausgewaehltes_projekt = {"name": None}
+
 _TREEVIEW_THEMES = {
     "standard":  {"bg": "white",   "fg": "black",   "sel_bg": "#0078D7", "sel_fg": "white",   "ttk_theme": None},
     "bernstein": {"bg": "#000000", "fg": "#FFBF00", "sel_bg": "#7A5C00", "sel_fg": "#FFBF00", "ttk_theme": "clam"},
@@ -1932,15 +1936,15 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _TAB_ANA = "zzz_Ketten_Analyse"
         _TAB_DET = "zzz_Ketten_Analyse_Details"
 
-        # ── 1. DB + aktives Projekt prüfen ────────────────────────────────────
+        # ── 1. DB + ausgewähltes Projekt prüfen ───────────────────────────────
         if not db_ist_geladen():
             messagebox.showwarning("Überschneidungen in Kette",
                 "Es ist keine Datenbank geladen.", parent=parent_win)
             return
-        pname = aktives_projekt_laden()
+        pname = _G_ausgewaehltes_projekt.get("name")
         if not pname:
             messagebox.showwarning("Überschneidungen in Kette",
-                "Kein aktives Projekt. Bitte zuerst ein Projekt aktivieren.",
+                "Kein Projekt ausgewählt. Bitte zuerst ein Projekt auswählen.",
                 parent=parent_win)
             return
 
@@ -2057,9 +2061,22 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             for i, s in enumerate(aktive_schritte)
         )
         letzter_alias = aliases[n_schr]
+        # ip_feld kann "Tabelle.Feld" (neu) oder "Feld" (alt, letzte Tabelle) sein
+        if "." in ip_feld:
+            _ip_tab_name, _ip_feld_name = ip_feld.split(".", 1)
+            _ip_alias = aliases[0] if _ip_tab_name == qt else None
+            for _ji, _js in enumerate(aktive_schritte):
+                if _js["zu_tab"] == _ip_tab_name:
+                    _ip_alias = aliases[_ji + 1]
+                    break
+            if _ip_alias is None:
+                _ip_alias = letzter_alias
+        else:
+            _ip_alias     = letzter_alias
+            _ip_feld_name = ip_feld
         sql_ana = (
             f"SELECT {aliases[0]}.{sql_identifier(qf)} AS gruppe, "
-            f"{letzter_alias}.{sql_identifier(ip_feld)} AS ip_wert "
+            f"{_ip_alias}.{sql_identifier(_ip_feld_name)} AS ip_wert "
             f"FROM {sql_identifier(qt)} {aliases[0]} "
             f"{joins_sql}"
         )
@@ -5932,6 +5949,7 @@ def sql_abfrage_fenster_oeffnen():
                 tree_projekte.see(item_id)
                 break
         projekt_status["aktuell"] = name
+        _G_ausgewaehltes_projekt["name"] = name
         sql_builder_auf_leeren_projektzustand_setzen(name)
         workflow_fuellen(name)
         _on_projekt_ausgewaehlt_fuer_views(name)
@@ -5957,6 +5975,7 @@ def sql_abfrage_fenster_oeffnen():
         projektliste_fuellen()
         if projekt_status.get("aktuell") == name:
             projekt_status["aktuell"] = None
+            _G_ausgewaehltes_projekt["name"] = None
             projekt_name_anzeige.set("")
         debug_log(f"Projekt geloescht: name={name}", "allgemein")
 
@@ -5969,6 +5988,7 @@ def sql_abfrage_fenster_oeffnen():
             return
         name = str(values[0])
         projekt_status["aktuell"] = name
+        _G_ausgewaehltes_projekt["name"] = name
         # Checkbox-Status aus Tabelle lesen
         try:
             ist_aktiv = bool(aktives_projekt_laden() == name)
@@ -6317,7 +6337,7 @@ def sql_abfrage_fenster_oeffnen():
     _view_combo.pack(side="left", padx=(0, 6))
 
     def _view_liste_aktualisieren(setze_ersten=False):
-        pname = projekt_status.get("aktuell")
+        pname = _G_ausgewaehltes_projekt.get("name")
         namen = projekt_view_namen_lesen(pname) if pname else []
         _view_combo["values"] = namen
         if setze_ersten and namen:
@@ -6326,7 +6346,7 @@ def sql_abfrage_fenster_oeffnen():
             _view_var.set(namen[0] if namen else "")
 
     def _view_laden():
-        pname = projekt_status.get("aktuell")
+        pname = _G_ausgewaehltes_projekt.get("name")
         vname = _view_var.get()
         if not pname or not vname:
             messagebox.showwarning("View laden", "Kein Projekt oder keine View ausgewählt.", parent=top)
@@ -6343,7 +6363,7 @@ def sql_abfrage_fenster_oeffnen():
         top.after(1100, _sql_editor_vorne)
 
     def _view_loeschen():
-        pname = projekt_status.get("aktuell")
+        pname = _G_ausgewaehltes_projekt.get("name")
         vname = _view_var.get()
         if not pname or not vname:
             return
@@ -6353,7 +6373,7 @@ def sql_abfrage_fenster_oeffnen():
         _view_liste_aktualisieren(setze_ersten=True)
 
     def _view_ueberschreiben():
-        pname = projekt_status.get("aktuell")
+        pname = _G_ausgewaehltes_projekt.get("name")
         vname = _view_var.get()
         if not pname or not vname:
             messagebox.showwarning("View speichern", "Kein Projekt oder keine View ausgewählt.", parent=top)
@@ -6371,7 +6391,7 @@ def sql_abfrage_fenster_oeffnen():
     _startview_anzeige_var = tk.StringVar(value="Admin View (Standard)")
 
     def _startview_anzeige_aktualisieren():
-        pname = projekt_status.get("aktuell")
+        pname = _G_ausgewaehltes_projekt.get("name")
         if pname:
             sv = projekt_startview_lesen(pname)
             _startview_anzeige_var.set(sv if sv else "Admin View (Standard)")
@@ -6379,7 +6399,7 @@ def sql_abfrage_fenster_oeffnen():
             _startview_anzeige_var.set("—")
 
     def _startview_setzen():
-        pname = projekt_status.get("aktuell")
+        pname = _G_ausgewaehltes_projekt.get("name")
         vname = _view_var.get()
         if not pname or not vname:
             messagebox.showwarning("Startview", "Kein Projekt oder keine View ausgewählt.", parent=top)
@@ -6388,7 +6408,7 @@ def sql_abfrage_fenster_oeffnen():
         _startview_anzeige_aktualisieren()
 
     def _startview_aufheben():
-        pname = projekt_status.get("aktuell")
+        pname = _G_ausgewaehltes_projekt.get("name")
         if not pname:
             return
         projekt_startview_aufheben(pname)
@@ -6407,7 +6427,7 @@ def sql_abfrage_fenster_oeffnen():
     _view_name_entry.pack(side="left", padx=(0, 6))
 
     def _view_speichern():
-        pname = projekt_status.get("aktuell")
+        pname = _G_ausgewaehltes_projekt.get("name")
         if not pname:
             messagebox.showwarning("View speichern", "Kein Projekt ausgewählt.", parent=top)
             return
@@ -6476,7 +6496,7 @@ def sql_abfrage_fenster_oeffnen():
             pass
 
     def _relationen_laden():
-        pname = projekt_status.get("aktuell")
+        pname = _G_ausgewaehltes_projekt.get("name")
         if not pname or not db_ist_geladen():
             return []
         try:
@@ -6533,7 +6553,7 @@ def sql_abfrage_fenster_oeffnen():
 
     def _relation_hinzufuegen():
         import re as _re
-        pname = projekt_status.get("aktuell")
+        pname = _G_ausgewaehltes_projekt.get("name")
         if not pname:
             messagebox.showwarning("Beziehung hinzufügen", "Kein Projekt ausgewählt.", parent=top)
             return
@@ -6874,7 +6894,7 @@ def sql_abfrage_fenster_oeffnen():
         """Dialog zum Anlegen/Bearbeiten einer Kettenbeziehung (mehrere Tabellen-Hops)."""
         import json as _json
 
-        pname = projekt_status.get("aktuell")
+        pname = _G_ausgewaehltes_projekt.get("name")
         if not pname:
             messagebox.showwarning("Kettenbeziehung", "Kein Projekt ausgewählt.", parent=top)
             return
@@ -7040,35 +7060,72 @@ def sql_abfrage_fenster_oeffnen():
         felder_lb.pack(side="left", fill="both", expand=True)
 
         # ── IP-Suchfeld ───────────────────────────────────────────────────────
+        # alt_ip_suchfeld kann "Feld" (alt) oder "Tabelle.Feld" (neu) sein
+        _ip_init_tab, _ip_init_feld = "", ""
+        if alt_ip_suchfeld:
+            if "." in alt_ip_suchfeld:
+                _ip_init_tab, _ip_init_feld = alt_ip_suchfeld.split(".", 1)
+            else:
+                # Altes Format: Feld gehörte zur letzten Tabelle
+                _ip_init_feld = alt_ip_suchfeld
+                _ip_init_tab  = (alt_kette[-1].get("zu_tab", "") if alt_kette else "")
+
         f_ip = tk.Frame(dlg)
         f_ip.grid(row=9, column=0, sticky="ew", padx=12, pady=(4, 2))
-        f_ip.columnconfigure(1, weight=1)
+        f_ip.columnconfigure(3, weight=1)
         tk.Label(f_ip,
                  text="IP-Analyse-Feld  (optional – für 'Überschneidungen in Kette suchen'):",
-                 anchor="w").grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 2))
-        ip_suchfeld_var = tk.StringVar(value=alt_ip_suchfeld)
+                 anchor="w").grid(row=0, column=0, columnspan=4, sticky="w", pady=(0, 2))
+
+        # Zeile 1: Tabelle wählen
+        tk.Label(f_ip, text="Tabelle:").grid(row=1, column=0, sticky="w", padx=(0, 4))
+        ip_tab_var = tk.StringVar(value=_ip_init_tab)
+        ip_tab_cb  = ttk.Combobox(f_ip, textvariable=ip_tab_var,
+                                   state="readonly", width=24)
+        ip_tab_cb.grid(row=1, column=1, sticky="w", padx=(0, 16))
+
+        # Zeile 1: Feld wählen
+        tk.Label(f_ip, text="Feld:").grid(row=1, column=2, sticky="w", padx=(0, 4))
+        ip_suchfeld_var = tk.StringVar(value=_ip_init_feld)
         ip_suchfeld_cb  = ttk.Combobox(f_ip, textvariable=ip_suchfeld_var,
-                                        state="readonly", width=36)
-        ip_suchfeld_cb.grid(row=1, column=0, sticky="w")
-        tk.Button(f_ip, text="✕ löschen", width=10,
-                  command=lambda: ip_suchfeld_var.set("")).grid(
-            row=1, column=1, sticky="w", padx=(8, 0))
+                                        state="readonly", width=24)
+        ip_suchfeld_cb.grid(row=1, column=3, sticky="w")
+        tk.Button(f_ip, text="✕", width=3,
+                  command=lambda: (ip_tab_var.set(""), ip_suchfeld_var.set(""))).grid(
+            row=1, column=4, sticky="w", padx=(6, 0))
+
         ip_suchfeld_info = tk.Label(f_ip,
-            text="Welches Feld der letzten Zieltabelle enthält IP-Adressen / Subnetze?",
+            text="Welches Feld welcher Tabelle enthält IP-Adressen / Subnetze?",
             anchor="w", fg="#555555", font=("TkDefaultFont", 8))
-        ip_suchfeld_info.grid(row=2, column=0, columnspan=2, sticky="w", pady=(2, 0))
+        ip_suchfeld_info.grid(row=2, column=0, columnspan=5, sticky="w", pady=(2, 0))
+
+        def _ip_tab_liste_aktualisieren(*_):
+            """Aktualisiert die Tabellen-Auswahl im IP-Feld-Bereich
+            (Quelltabelle + alle Schritt-Zieltabellen)."""
+            tabs = []
+            if qt_var.get():
+                tabs.append(qt_var.get())
+            for sd in schritte_data:
+                t = sd["zu_tab_var"].get()
+                if t and t not in tabs:
+                    tabs.append(t)
+            ip_tab_cb["values"] = tabs
+            # Falls aktuelle Auswahl nicht mehr in der Liste: zurücksetzen
+            if ip_tab_var.get() not in tabs:
+                ip_tab_var.set(tabs[-1] if tabs else "")
+                ip_suchfeld_var.set("")
+            _ip_suchfeld_cb_aktualisieren()
 
         def _ip_suchfeld_cb_aktualisieren(*_):
             """Aktualisiert die verfügbaren Felder für das IP-Suchfeld-Dropdown
-            (immer die Felder der letzten Zieltabelle)."""
-            if schritte_data:
-                letzte_tab = schritte_data[-1]["zu_tab_var"].get()
-            else:
-                letzte_tab = ""
-            felder = get_felder(letzte_tab) if letzte_tab else []
+            (Felder der gewählten Tabelle)."""
+            tab = ip_tab_var.get()
+            felder = get_felder(tab) if tab else []
             ip_suchfeld_cb["values"] = [""] + felder
             if ip_suchfeld_var.get() not in felder:
                 ip_suchfeld_var.set("")
+
+        ip_tab_cb.bind("<<ComboboxSelected>>", _ip_suchfeld_cb_aktualisieren)
 
         # ── Buttons ───────────────────────────────────────────────────────────
         f_btn = tk.Frame(dlg)
@@ -7158,7 +7215,7 @@ def sql_abfrage_fenster_oeffnen():
             for i, sd in enumerate(schritte_data):
                 _schritt_zeile_zeichnen(i, sd)
             _refresh_felder_lb()
-            _ip_suchfeld_cb_aktualisieren()
+            _ip_tab_liste_aktualisieren()
 
         def _schritt_zeile_zeichnen(i, sd):
             prev_tab    = _vorherige_tabelle(i)
@@ -7203,7 +7260,26 @@ def sql_abfrage_fenster_oeffnen():
                 if aktiver_felder_schritt["idx"] >= len(schritte_data):
                     aktiver_felder_schritt["idx"] = len(schritte_data) - 1
                 _schritte_neu_zeichnen()
-            tk.Button(row_f, text="✕", width=2, command=_loeschen).grid(row=0, column=7, padx=(0, 4))
+
+            def _hoch(idx=i):
+                if idx > 0:
+                    _speichere_felder_lb()
+                    schritte_data[idx - 1], schritte_data[idx] = \
+                        schritte_data[idx], schritte_data[idx - 1]
+                    aktiver_felder_schritt["idx"] = idx - 1
+                    _schritte_neu_zeichnen()
+
+            def _runter(idx=i):
+                if idx < len(schritte_data) - 1:
+                    _speichere_felder_lb()
+                    schritte_data[idx], schritte_data[idx + 1] = \
+                        schritte_data[idx + 1], schritte_data[idx]
+                    aktiver_felder_schritt["idx"] = idx + 1
+                    _schritte_neu_zeichnen()
+
+            tk.Button(row_f, text="✕", width=2, command=_loeschen).grid(row=0, column=7, padx=(0, 2))
+            tk.Button(row_f, text="▲", width=2, command=_hoch).grid(row=0, column=8, padx=(0, 2))
+            tk.Button(row_f, text="▼", width=2, command=_runter).grid(row=0, column=9, padx=(0, 4))
 
             # Zeile 1: Aktivieren-Checkbox + Felder-Radiobutton
             sub = tk.Frame(row_f)
@@ -7242,6 +7318,7 @@ def sql_abfrage_fenster_oeffnen():
             qf_var.set(felder[0] if felder else "")
             _quell_felder_listbox_aktualisieren()
             _schritte_neu_zeichnen()
+            _ip_tab_liste_aktualisieren()
         qt_cb.bind("<<ComboboxSelected>>", _qt_changed)
 
         def _bestaetigen():
@@ -7285,7 +7362,10 @@ def sql_abfrage_fenster_oeffnen():
                 from datetime import datetime as _dt
                 jetzt = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
                 vb = sqlite_verbindung_oeffnen()
-                ip_sf = ip_suchfeld_var.get().strip()
+                _ip_tab_save  = ip_tab_var.get().strip()
+                _ip_feld_save = ip_suchfeld_var.get().strip()
+                ip_sf = f"{_ip_tab_save}.{_ip_feld_save}" \
+                        if (_ip_tab_save and _ip_feld_save) else ""
                 if rel_id is None:
                     vb.execute(
                         f"INSERT INTO {sql_identifier(G_TABELLE_RELATIONEN_SQL)} "
@@ -7336,14 +7416,14 @@ def sql_abfrage_fenster_oeffnen():
             )
         if not alt_kette:
             _refresh_felder_lb()
+        # Tabellen-Liste und Feld-Dropdown initialisieren
+        _ip_tab_liste_aktualisieren()
+        # IP-Tabelle und IP-Feld aus DB wiederherstellen
+        if _ip_init_tab:
+            ip_tab_var.set(_ip_init_tab)
         _ip_suchfeld_cb_aktualisieren()
-        # IP-Suchfeld aus DB wiederherstellen (nach dem Laden aller Schritte)
-        if alt_ip_suchfeld:
-            letzte_tab_lade = schritte_data[-1]["zu_tab_var"].get() if schritte_data else ""
-            felder_letzte = get_felder(letzte_tab_lade)
-            ip_suchfeld_cb["values"] = [""] + felder_letzte
-            if alt_ip_suchfeld in felder_letzte:
-                ip_suchfeld_var.set(alt_ip_suchfeld)
+        if _ip_init_feld and _ip_init_feld in (ip_suchfeld_cb["values"] or []):
+            ip_suchfeld_var.set(_ip_init_feld)
         dlg.wait_window()
 
     def _relation_bearbeiten_auto():
@@ -7464,6 +7544,7 @@ def sql_abfrage_fenster_oeffnen():
             return
         projektliste_fuellen()
         projekt_status["aktuell"] = name
+        _G_ausgewaehltes_projekt["name"] = name
         projekt_name_anzeige.set(name)
         messagebox.showinfo(
             "Projekt speichern",
@@ -9381,6 +9462,7 @@ def sql_abfrage_fenster_oeffnen():
                     tree_projekte.focus(_item)
                     tree_projekte.see(_item)
                     projekt_status["aktuell"] = _aktiv
+                    _G_ausgewaehltes_projekt["name"] = _aktiv
                     projekt_name_anzeige.set(_aktiv)
                     aktiv_var.set(True)
                     sql_builder_auf_leeren_projektzustand_setzen(_aktiv)
@@ -9399,9 +9481,4 @@ def sql_abfrage_fenster_oeffnen():
     delete_where_auswahlwerte_aktualisieren()
     delete_where_widgetwerte_laden(0)
     insert_auswahlwerte_aktualisieren()
-    insert_widgetwerte_laden(0)
-    gespeicherten_zustand_merken()
-    # Theme auf neu geöffnetes SQL-Editor-Fenster anwenden
-    treeview_theme_anwenden(_sql_konfig_lesen("treeview_theme") or "standard", speichern=False)
-
-
+    insert_widgetw
