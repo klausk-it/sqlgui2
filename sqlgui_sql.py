@@ -2449,9 +2449,9 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         g_tv.heading("gruppe", text=f"Gruppe  ({qf})",   anchor="w")
         g_tv.heading("n_ips",  text="IP-Einträge",        anchor="e")
         g_tv.heading("n_ue",   text="Überschneidungen",   anchor="e")
-        g_tv.column("gruppe",  anchor="w", width=480)
-        g_tv.column("n_ips",   anchor="e", width=120)
-        g_tv.column("n_ue",    anchor="e", width=140)
+        g_tv.column("gruppe",  anchor="w", width=200, stretch=True)
+        g_tv.column("n_ips",   anchor="e", width=90,  stretch=False)
+        g_tv.column("n_ue",    anchor="e", width=110, stretch=False)
         ttk.Scrollbar(frm_oben, orient="vertical",
                       command=g_tv.yview).grid(row=0, column=1, sticky="ns")
         ttk.Scrollbar(frm_oben, orient="horizontal",
@@ -2495,13 +2495,13 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         d_tv.heading("ol_start",  text="Überschn. Start",  anchor="w")
         d_tv.heading("ol_end",    text="Überschn. Ende",   anchor="w")
         d_tv.heading("anz",       text="Anzahl IPs",        anchor="e")
-        d_tv.column("z_a",        width=60,  anchor="e")
-        d_tv.column("eintrag_a",  width=190, anchor="w")
-        d_tv.column("z_b",        width=60,  anchor="e")
-        d_tv.column("eintrag_b",  width=190, anchor="w")
-        d_tv.column("ol_start",   width=130, anchor="w")
-        d_tv.column("ol_end",     width=130, anchor="w")
-        d_tv.column("anz",        width=80,  anchor="e")
+        d_tv.column("z_a",        width=55,  anchor="e", stretch=False)
+        d_tv.column("eintrag_a",  width=160, anchor="w", stretch=True)
+        d_tv.column("z_b",        width=55,  anchor="e", stretch=False)
+        d_tv.column("eintrag_b",  width=160, anchor="w", stretch=True)
+        d_tv.column("ol_start",   width=110, anchor="w", stretch=False)
+        d_tv.column("ol_end",     width=110, anchor="w", stretch=False)
+        d_tv.column("anz",        width=70,  anchor="e", stretch=False)
         ttk.Scrollbar(frm_unten, orient="vertical",
                       command=d_tv.yview).grid(row=0, column=1, sticky="ns")
         ttk.Scrollbar(frm_unten, orient="horizontal",
@@ -9478,7 +9478,4 @@ def sql_abfrage_fenster_oeffnen():
         if _aktiv:
             for _item in tree_projekte.get_children():
                 _vals = tree_projekte.item(_item, "values")
-                if _vals and _vals[0] == _aktiv:
-                    tree_projekte.selection_set(_item)
-                    tree_projekte.focus(_item)
-                    tree_projekte.se
+                if _vals and _vals[0] ==
