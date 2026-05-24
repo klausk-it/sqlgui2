@@ -46,6 +46,7 @@ from sqlgui_sql import (
     treeview_theme_aus_db_laden,
     sql_editor_hat_ungespeicherte_aenderungen,
     sql_editor_speichern,
+    _tv_sortieren,
 )
 
 root = tk.Tk()
@@ -726,9 +727,9 @@ def fensterliste_anzeigen():
         selectmode="browse",
         style="Gulf.Treeview",
     )
-    treewidget.heading("typ", text="Typ", anchor="w")
-    treewidget.heading("titel", text="Fenstertitel", anchor="w")
-    treewidget.heading("status", text="Status", anchor="w")
+    treewidget.heading("typ", text="Typ", anchor="w", command=lambda: _tv_sortieren(treewidget, "typ"))
+    treewidget.heading("titel", text="Fenstertitel", anchor="w", command=lambda: _tv_sortieren(treewidget, "titel"))
+    treewidget.heading("status", text="Status", anchor="w", command=lambda: _tv_sortieren(treewidget, "status"))
     treewidget.column("typ", width=140, anchor="w")
     treewidget.column("titel", width=500, anchor="w")
     treewidget.column("status", width=120, anchor="center")
@@ -2100,7 +2101,7 @@ def tabellenfenster_sortieren(fenster_id, spaltenname):
     for spalte in cache["spalten"]:
         richt = cache["sortierung"].get(spalte)
         text = spalte if richt is None else f"{spalte} {'▼' if richt else '▲'}"
-        tree_widget.heading(spalte, text=text, command=lambda c=spalte, fid=fenster_id: tabellenfenster_sortieren(fid, c, anchor="w"))
+        tree_widget.heading(spalte, text=text, anchor="w", command=lambda c=spalte, fid=fenster_id: tabellenfenster_sortieren(fid, c))
     tree_spalten_breiten_anpassen(tree_widget)
 
 
@@ -2627,8 +2628,8 @@ def tabellenfenster_eindeutige_feldwerte_anzeigen(fenster_id):
             daten.sort(key=lambda eintrag: eintrag[0].lower(), reverse=eindeutige_sortierung.get("absteigend", False))
         else:
             daten.sort(key=lambda eintrag: (eintrag[1], eintrag[0].lower()), reverse=eindeutige_sortierung.get("absteigend", True))
-        auswertung_tree.heading("wert", text=eindeutige_kopftext("wert", "Wert", anchor="w"), command=lambda: eindeutige_werte_sortieren("wert"))
-        auswertung_tree.heading("anzahl", text=eindeutige_kopftext("anzahl", "Anzahl", anchor="w"), command=lambda: eindeutige_werte_sortieren("anzahl"))
+        auswertung_tree.heading("wert", text=eindeutige_kopftext("wert", "Wert"),     anchor="w", command=lambda: eindeutige_werte_sortieren("wert"))
+        auswertung_tree.heading("anzahl", text=eindeutige_kopftext("anzahl", "Anzahl"), anchor="w", command=lambda: eindeutige_werte_sortieren("anzahl"))
         for wert, anzahl in daten:
             anzeige_wert = "(leer)" if wert == "" else wert
             auswertung_tree.insert("", "end", values=(anzeige_wert, f"{anzahl:,}".replace(",", ".")))
@@ -3406,7 +3407,7 @@ def _join_fenster_aufbauen(quell_tab, filter_feld, filter_wert, folge_rel, paren
 
     tv = ttk.Treeview(tv_frame, columns=alle_spalten, show="headings")
     for sp in alle_spalten:
-        tv.heading(sp, text=sp, anchor="w")
+        tv.heading(sp, text=sp, anchor="w", command=lambda c=sp, t=tv: _tv_sortieren(t, c))
         tv.column(sp, width=110, anchor="w", minwidth=50)
     for zeile in zeilen:
         tv.insert("", "end", values=[str(v) if v is not None else "" for v in zeile])
@@ -3559,7 +3560,7 @@ def _verknuepfte_datensaetze_fenster_aufbauen(tabellenname, spalten, werte, pare
         tv = ttk.Treeview(tv_frame, columns=ziel_spalten, show="headings",
                           height=min(anzahl, 8))
         for sp in ziel_spalten:
-            tv.heading(sp, text=sp, anchor="w")
+            tv.heading(sp, text=sp, anchor="w", command=lambda c=sp, t=tv: _tv_sortieren(t, c))
             tv.column(sp, width=120, anchor="w")
         for zeile in ziel_zeilen:
             tv.insert("", "end", values=[str(v) if v is not None else "" for v in zeile])
@@ -4626,7 +4627,7 @@ def tabellenfenster_queue_pruefen(fenster_id):
             fenster_tree["columns"] = spalten
             fenster_tree["show"] = "headings"
             for spalte in spalten:
-                fenster_tree.heading(spalte, text=spaltenkopf_text(spalte, cache, anchor="w"), command=lambda c=spalte, fid=fenster_id: tabellenfenster_sortieren(fid, c))
+                fenster_tree.heading(spalte, text=spaltenkopf_text(spalte, cache), anchor="w", command=lambda c=spalte, fid=fenster_id: tabellenfenster_sortieren(fid, c))
                 fenster_tree.column(spalte, anchor="w")
             tabellenfenster_basis_titel_setzen(fenster_id, "  * Struktur geladen, Daten werden gelesen...")
         elif status == "datenblock":
@@ -4786,7 +4787,7 @@ def tabelle_vorschau_pruefen():
     tree["columns"] = spalten
     tree["show"] = "headings"
     for spalte in spalten:
-        tree.heading(spalte, text=spalte, anchor="w")
+        tree.heading(spalte, text=spalte, anchor="w", command=lambda c=spalte, t=tree: _tv_sortieren(t, c))
         tree.column(spalte, anchor="w")
     eingefuegt = 0
     for zeile in zeilen:
@@ -5488,7 +5489,7 @@ def csvvorschaufenster_oeffnen(csvdaten):
 
     treecsv["columns"] = header
     for spalte in header:
-        treecsv.heading(spalte, text=spalte, anchor="w")
+        treecsv.heading(spalte, text=spalte, anchor="w", command=lambda c=spalte, t=treecsv: _tv_sortieren(t, c))
         treecsv.column(spalte, anchor="w")
 
     G_csv_fenster[csvfensterid] = {
@@ -6237,7 +6238,7 @@ right_frame.grid_columnconfigure(0, weight=1)
 
 tk.Label(left_frame, text="Tabellen", anchor="w").grid(row=0, column=0, sticky="ew", pady=(0, 6))
 tree_tabellen = ttk.Treeview(left_frame, columns=("name",), show="headings", selectmode="browse")
-tree_tabellen.heading("name", text="Name", anchor="w")
+tree_tabellen.heading("name", text="Name", anchor="w", command=lambda: _tv_sortieren(tree_tabellen, "name"))
 tree_tabellen.column("name", anchor="w")
 tree_tabellen.grid(row=1, column=0, sticky="nsew")
 sy_left = ttk.Scrollbar(left_frame, orient="vertical", command=tree_tabellen.yview)
@@ -6435,12 +6436,4 @@ def csvfenster_feldfilter_setzen(csvfensterid):
     filter_text.focus_force()
 
     btn_frame = tk.Frame(frame)
-    btn_frame.grid(row=2, column=0, columnspan=2, sticky="e", pady=(8, 0))
-
-    def anwenden():
-        filterwert = filter_text.get("1.0", "end").strip()
-        rows_alle = daten.get("rows", [])
-        gefiltert = [z for z in rows_alle if index < len(z) and str(z[index]) == filterwert]
-        daten["sichtbarerows"] = gefiltert
-        gui_csv_tree_neu_aufbauen(csvfensterid, G_csv_fenster)
-        csvfenstertemphinweis(csvfenster
+ 

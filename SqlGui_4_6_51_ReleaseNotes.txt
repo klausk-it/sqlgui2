@@ -1742,8 +1742,15 @@ VERSIONSHISTORIE (KurzÃ¼bersicht)
            Schritte, kombiniertes Ergebnis aus mehreren Schritt-Tabellen in einem
            Treeview, Spaltenname bei Konflikt mit Tabellenpräfix ("Tabelle.Feld"),
            rückwärtskompatibel (alte Datensätze ohne aktiv/felder-Felder öffnen
-           automatisch mit letztem Schritt aktiv)
-
-================================================================================
-
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          
+           automatisch mit letztem Schritt aktiv),
+           Bug-Fix: insert_widget NameError in sqlgui_sql.py (Zeile 9484) behoben
+           (insert_widgetwerte_laden(0) statt insert_widget),
+           Überschneidungen-Fenster: Spaltenbreiten kompakter (stretch=False auf
+           allen Spalten, kein automatisches Auffüllen bis Fensterrand mehr),
+           Rechtsklick-Menü auf Spaltenüberschriften: "Daten optimal" /
+           "Spaltennamen optimal" / "Alle Spaltennamen vollständig anzeigen"
+           in allen Fenstern überall verfügbar (SQL-Ergebnis, Tabellenfenster,
+           Überschneidungen, Kette, alle weiteren Treeviews),
+           Spaltenüberschriften überall linksbündig (anchor="w") — vorher Mix
+           aus mittig und linksbündig,
+           Sortie

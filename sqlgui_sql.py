@@ -96,6 +96,41 @@ _PROJEKT_LAYOUT_BEREICH = "Projekt-Layout"
 _G_ausgewaehltes_projekt = {"name": None}
 
 
+_TV_SORT_ZUSTAND = {}   # {(id(tv), col_id): aufsteigend_bool}
+
+
+def _tv_sortieren(tv, col):
+    """Generische Spalten-Sortierung für beliebige ttk.Treeview. Togglet ▲/▼."""
+    alle = list(tv["columns"])
+    if col not in alle:
+        return
+    key = (id(tv), col)
+    aufsteigend = not _TV_SORT_ZUSTAND.get(key, False)
+    _TV_SORT_ZUSTAND[key] = aufsteigend
+
+    idx = alle.index(col)
+    items = [(tv.item(iid, "values"), iid) for iid in tv.get_children()]
+
+    def _sk(item):
+        v = item[0][idx] if idx < len(item[0]) else ""
+        try:
+            return (0, float(str(v).replace(",", ".").replace(" ", "").replace("\u202f", "")))
+        except (ValueError, TypeError):
+            return (1, str(v).lower())
+
+    items.sort(key=_sk, reverse=not aufsteigend)
+    for _, iid in items:
+        tv.move(iid, "", "end")
+
+    for c in alle:
+        try:
+            kopf = tv.heading(c, "text").rstrip().rstrip("▲▼").rstrip()
+            pf = " ▲" if (c == col and aufsteigend) else (" ▼" if c == col else "")
+            tv.heading(c, text=kopf + pf, anchor="w")
+        except Exception:
+            pass
+
+
 def _tv_spalten_minimum(tv):
     """Setzt jede Spalte auf die Breite ihres Spaltenkopf-Textes (Minimum)."""
     import tkinter.font as _tkfont
@@ -1376,8 +1411,8 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             p_info = f"    Prefix: {p} Zeichen" if p > 0 else ""
             info_var.set((f"Spalte: {sp_name}    Datensätze: {len(items):,}    "
                            f"unterschiedliche Werte: {len(daten):,}{p_info}").replace(",", "."))
-            wtv.heading("wert",   text=_kopf("wert",   "Wert", anchor="w"),   command=lambda: _sort("wert"))
-            wtv.heading("anzahl", text=_kopf("anzahl", "Anzahl", anchor="w"), command=lambda: _sort("anzahl"))
+            wtv.heading("wert",   text=_kopf("wert",   "Wert"), anchor="w",   command=lambda: _sort("wert"))
+            wtv.heading("anzahl", text=_kopf("anzahl", "Anzahl"), anchor="w", command=lambda: _sort("anzahl"))
             wtv.delete(*wtv.get_children())
             for w2, anz in daten:
                 wtv.insert("", "end", values=("(leer)" if w2 == "" else w2,
@@ -1904,13 +1939,13 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         cols = ("z_a", "eintrag_a", "z_b", "eintrag_b", "ol_start", "ol_end", "anz")
         tv2 = ttk.Treeview(frm, columns=cols, show="headings", selectmode="browse")
-        tv2.heading("z_a",      text="Zeile A",           anchor="w")
-        tv2.heading("eintrag_a", text="Eintrag A",         anchor="w")
-        tv2.heading("z_b",      text="Zeile B",           anchor="w")
-        tv2.heading("eintrag_b", text="Eintrag B",         anchor="w")
-        tv2.heading("ol_start",  text="Überschn. Start",  anchor="w")
-        tv2.heading("ol_end",    text="Überschn. End",    anchor="w")
-        tv2.heading("anz",       text="Anzahl IPs",        anchor="w")
+        tv2.heading("z_a",      text="Zeile A",           anchor="w", command=lambda: _tv_sortieren(tv2, "z_a"))
+        tv2.heading("eintrag_a", text="Eintrag A",         anchor="w", command=lambda: _tv_sortieren(tv2, "eintrag_a"))
+        tv2.heading("z_b",      text="Zeile B",           anchor="w", command=lambda: _tv_sortieren(tv2, "z_b"))
+        tv2.heading("eintrag_b", text="Eintrag B",         anchor="w", command=lambda: _tv_sortieren(tv2, "eintrag_b"))
+        tv2.heading("ol_start",  text="Überschn. Start",  anchor="w", command=lambda: _tv_sortieren(tv2, "ol_start"))
+        tv2.heading("ol_end",    text="Überschn. End",    anchor="w", command=lambda: _tv_sortieren(tv2, "ol_end"))
+        tv2.heading("anz",       text="Anzahl IPs",        anchor="w", command=lambda: _tv_sortieren(tv2, "anz"))
         tv2.column("z_a",       width=60,  anchor="e")
         tv2.column("eintrag_a", width=180, anchor="w")
         tv2.column("z_b",       width=60,  anchor="e")
@@ -2024,10 +2059,10 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             sc_tv = ttk.Treeview(dlg_sel, columns=sc_cols, show="headings",
                                  selectmode="browse",
                                  height=min(len(ketten_rows), 7))
-            sc_tv.heading("bez", text="Bezeichnung",  anchor="w")
-            sc_tv.heading("qt",  text="Quelltabelle", anchor="w")
-            sc_tv.heading("qf",  text="Quellfeld",    anchor="w")
-            sc_tv.heading("ip",  text="IP-Suchfeld",  anchor="w")
+            sc_tv.heading("bez", text="Bezeichnung",  anchor="w", command=lambda: _tv_sortieren(sc_tv, "bez"))
+            sc_tv.heading("qt",  text="Quelltabelle", anchor="w", command=lambda: _tv_sortieren(sc_tv, "qt"))
+            sc_tv.heading("qf",  text="Quellfeld",    anchor="w", command=lambda: _tv_sortieren(sc_tv, "qf"))
+            sc_tv.heading("ip",  text="IP-Suchfeld",  anchor="w", command=lambda: _tv_sortieren(sc_tv, "ip"))
             sc_tv.column("bez",  width=200, anchor="w")
             sc_tv.column("qt",   width=130, anchor="w")
             sc_tv.column("qf",   width=110, anchor="w")
@@ -2296,13 +2331,13 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             a_cols = ("dt", "bez", "qt", "qf", "ip", "gruppen", "ue")
             a_tv = ttk.Treeview(frm_b_oben, columns=a_cols, show="headings",
                                 selectmode="browse")
-            a_tv.heading("dt",      text="Zeitpunkt",        anchor="w")
-            a_tv.heading("bez",     text="Bezeichnung",      anchor="w")
-            a_tv.heading("qt",      text="Quelltabelle",     anchor="w")
-            a_tv.heading("qf",      text="Quellfeld",        anchor="w")
-            a_tv.heading("ip",      text="IP-Suchfeld",      anchor="w")
-            a_tv.heading("gruppen", text="Gruppen",          anchor="w")
-            a_tv.heading("ue",      text="Überschneidungen", anchor="w")
+            a_tv.heading("dt",      text="Zeitpunkt",        anchor="w", command=lambda: _tv_sortieren(a_tv, "dt"))
+            a_tv.heading("bez",     text="Bezeichnung",      anchor="w", command=lambda: _tv_sortieren(a_tv, "bez"))
+            a_tv.heading("qt",      text="Quelltabelle",     anchor="w", command=lambda: _tv_sortieren(a_tv, "qt"))
+            a_tv.heading("qf",      text="Quellfeld",        anchor="w", command=lambda: _tv_sortieren(a_tv, "qf"))
+            a_tv.heading("ip",      text="IP-Suchfeld",      anchor="w", command=lambda: _tv_sortieren(a_tv, "ip"))
+            a_tv.heading("gruppen", text="Gruppen",          anchor="w", command=lambda: _tv_sortieren(a_tv, "gruppen"))
+            a_tv.heading("ue",      text="Überschneidungen", anchor="w", command=lambda: _tv_sortieren(a_tv, "ue"))
             a_tv.column("dt",       width=140, anchor="w")
             a_tv.column("bez",      width=170, anchor="w")
             a_tv.column("qt",       width=120, anchor="w")
@@ -2326,12 +2361,12 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             bd_cols = ("gruppe", "ea", "eb", "ol_s", "ol_e", "cnt")
             bd_tv = ttk.Treeview(frm_b_unten, columns=bd_cols, show="headings",
                                  selectmode="browse")
-            bd_tv.heading("gruppe", text="Gruppe",            anchor="w")
-            bd_tv.heading("ea",     text="Eintrag A",         anchor="w")
-            bd_tv.heading("eb",     text="Eintrag B",         anchor="w")
-            bd_tv.heading("ol_s",   text="Überschn. Start",   anchor="w")
-            bd_tv.heading("ol_e",   text="Überschn. Ende",    anchor="w")
-            bd_tv.heading("cnt",    text="Anzahl IPs",        anchor="w")
+            bd_tv.heading("gruppe", text="Gruppe",            anchor="w", command=lambda: _tv_sortieren(bd_tv, "gruppe"))
+            bd_tv.heading("ea",     text="Eintrag A",         anchor="w", command=lambda: _tv_sortieren(bd_tv, "ea"))
+            bd_tv.heading("eb",     text="Eintrag B",         anchor="w", command=lambda: _tv_sortieren(bd_tv, "eb"))
+            bd_tv.heading("ol_s",   text="Überschn. Start",   anchor="w", command=lambda: _tv_sortieren(bd_tv, "ol_s"))
+            bd_tv.heading("ol_e",   text="Überschn. Ende",    anchor="w", command=lambda: _tv_sortieren(bd_tv, "ol_e"))
+            bd_tv.heading("cnt",    text="Anzahl IPs",        anchor="w", command=lambda: _tv_sortieren(bd_tv, "cnt"))
             bd_tv.column("gruppe",  width=220, anchor="w")
             bd_tv.column("ea",      width=170, anchor="w")
             bd_tv.column("eb",      width=170, anchor="w")
@@ -2466,9 +2501,9 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         g_cols = ("gruppe", "n_ips", "n_ue")
         g_tv = ttk.Treeview(frm_oben, columns=g_cols, show="headings", selectmode="browse")
-        g_tv.heading("gruppe", text=f"Gruppe  ({qf}, anchor="w")",   anchor="w")
-        g_tv.heading("n_ips",  text="IP-Einträge",        anchor="w")
-        g_tv.heading("n_ue",   text="Überschneidungen",   anchor="w")
+        g_tv.heading("gruppe", text=f"Gruppe  ({qf})",   anchor="w", command=lambda: _tv_sortieren(g_tv, "gruppe"))
+        g_tv.heading("n_ips",  text="IP-Einträge",        anchor="w", command=lambda: _tv_sortieren(g_tv, "n_ips"))
+        g_tv.heading("n_ue",   text="Überschneidungen",   anchor="w", command=lambda: _tv_sortieren(g_tv, "n_ue"))
         g_tv.column("gruppe",  anchor="w", width=200, stretch=False)
         g_tv.column("n_ips",   anchor="w", width=90,  stretch=False)
         g_tv.column("n_ue",    anchor="w", width=110, stretch=False)
@@ -2508,13 +2543,13 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         d_cols = ("z_a", "eintrag_a", "z_b", "eintrag_b", "ol_start", "ol_end", "anz")
         d_tv = ttk.Treeview(frm_unten, columns=d_cols, show="headings", selectmode="browse")
-        d_tv.heading("z_a",       text="Zeile A",         anchor="w")
-        d_tv.heading("eintrag_a", text="Eintrag A",        anchor="w")
-        d_tv.heading("z_b",       text="Zeile B",          anchor="w")
-        d_tv.heading("eintrag_b", text="Eintrag B",        anchor="w")
-        d_tv.heading("ol_start",  text="Überschn. Start", anchor="w")
-        d_tv.heading("ol_end",    text="Überschn. Ende",  anchor="w")
-        d_tv.heading("anz",       text="Anzahl IPs",       anchor="w")
+        d_tv.heading("z_a",       text="Zeile A",         anchor="w", command=lambda: _tv_sortieren(d_tv, "z_a"))
+        d_tv.heading("eintrag_a", text="Eintrag A",        anchor="w", command=lambda: _tv_sortieren(d_tv, "eintrag_a"))
+        d_tv.heading("z_b",       text="Zeile B",          anchor="w", command=lambda: _tv_sortieren(d_tv, "z_b"))
+        d_tv.heading("eintrag_b", text="Eintrag B",        anchor="w", command=lambda: _tv_sortieren(d_tv, "eintrag_b"))
+        d_tv.heading("ol_start",  text="Überschn. Start", anchor="w", command=lambda: _tv_sortieren(d_tv, "ol_start"))
+        d_tv.heading("ol_end",    text="Überschn. Ende",  anchor="w", command=lambda: _tv_sortieren(d_tv, "ol_end"))
+        d_tv.heading("anz",       text="Anzahl IPs",       anchor="w", command=lambda: _tv_sortieren(d_tv, "anz"))
         d_tv.column("z_a",        width=55,  anchor="w", stretch=False)
         d_tv.column("eintrag_a",  width=160, anchor="w", stretch=False)
         d_tv.column("z_b",        width=55,  anchor="w", stretch=False)
@@ -3397,7 +3432,7 @@ def _workflow_ketten_fenster_oeffnen(rel_id_str, projektname):
         for s in sichtb:
             pf = " ▲" if s == sp and aufsteigend else (" ▼" if s == sp else "")
             tv.heading(s, text=s + pf, anchor="w",
-                       command=lambda c=s, t=tv: _tv_ketten_sortiere(t, c, anchor="w"))
+                       command=lambda c=s, t=tv: _tv_ketten_sortiere(t, c))
 
     haupt = tk.Frame(win)
     haupt.pack(fill="both", expand=True, padx=6, pady=6)
@@ -3455,7 +3490,7 @@ def _workflow_ketten_fenster_oeffnen(rel_id_str, projektname):
                              show="headings", selectmode="browse")
     for sp in angezeigte_spalten:
         quell_tv.heading(sp, text=sp, anchor="w",
-                         command=lambda c=sp: _tv_ketten_sortiere(quell_tv, c, anchor="w"))
+                         command=lambda c=sp: _tv_ketten_sortiere(quell_tv, c))
         quell_tv.column(sp, width=80, anchor="w", minwidth=40)
     for zeile in quell_zeilen:
         quell_tv.insert("", "end", values=[str(v) if v is not None else "" for v in zeile])
@@ -3601,7 +3636,7 @@ def _workflow_ketten_fenster_oeffnen(rel_id_str, projektname):
             ziel_tv.configure(columns=spalten)
             for sp in spalten:
                 ziel_tv.heading(sp, text=sp, anchor="w",
-                                command=lambda c=sp: _tv_ketten_sortiere(ziel_tv, c, anchor="w"))
+                                command=lambda c=sp: _tv_ketten_sortiere(ziel_tv, c))
                 ziel_tv.column(sp, width=80, anchor="w", minwidth=40)
         ziel_tv.delete(*ziel_tv.get_children())
         for zeile in zeilen:
@@ -4427,20 +4462,20 @@ def sql_abfrage_fenster_oeffnen():
 
     tk.Label(left, text="Tabellen:").pack(anchor="w")
     tree_tab = ttk.Treeview(left, columns=("t",), show="headings", height=linke_liste_hoehe, selectmode="browse")
-    tree_tab.heading("t", text="Tabelle", anchor="w")
+    tree_tab.heading("t", text="Tabelle", anchor="w", command=lambda: _tv_sortieren(tree_tab, "t"))
     tree_tab.column("t", width=liste_breite, anchor="w")
     tree_tab.pack(fill="x", pady=(0, linke_liste_abstand))
 
     tk.Label(left, text="Felder:").pack(anchor="w")
     tree_fel = ttk.Treeview(left, columns=("f",), show="headings", height=linke_liste_hoehe, selectmode="browse")
-    tree_fel.heading("f", text="Feld", anchor="w")
+    tree_fel.heading("f", text="Feld", anchor="w", command=lambda: _tv_sortieren(tree_fel, "f"))
     tree_fel.column("f", width=liste_breite, anchor="w")
     tree_fel.pack(fill="x", pady=(0, linke_liste_abstand))
 
     tk.Label(left, text="Gespeicherte SQL-Abfragen:").pack(anchor="w")
     tree_saved = ttk.Treeview(left, columns=("name", "ziel"), show="headings", height=linke_liste_hoehe, selectmode="browse")
-    tree_saved.heading("name", text="Name", anchor="w")
-    tree_saved.heading("ziel", text="Zieltabelle", anchor="w")
+    tree_saved.heading("name", text="Name", anchor="w", command=lambda: _tv_sortieren(tree_saved, "name"))
+    tree_saved.heading("ziel", text="Zieltabelle", anchor="w", command=lambda: _tv_sortieren(tree_saved, "ziel"))
     tree_saved.column("name", width=max(60, int(liste_breite * 0.6)), anchor="w")
     tree_saved.column("ziel", width=max(40, int(liste_breite * 0.4)), anchor="w")
     tree_saved.pack(fill="x", pady=(0, linke_liste_abstand))
@@ -4449,7 +4484,7 @@ def sql_abfrage_fenster_oeffnen():
     func_frame = tk.Frame(left)
     func_frame.pack(fill="x", pady=(0, linke_liste_abstand))
     tree_func = ttk.Treeview(func_frame, columns=("name",), show="headings", height=linke_liste_hoehe, selectmode="browse")
-    tree_func.heading("name", text="Name", anchor="w")
+    tree_func.heading("name", text="Name", anchor="w", command=lambda: _tv_sortieren(tree_func, "name"))
     tree_func.column("name", width=liste_breite, anchor="w")
     func_scroll = ttk.Scrollbar(func_frame, orient="vertical", command=tree_func.yview)
     tree_func.configure(yscrollcommand=func_scroll.set)
@@ -4460,9 +4495,9 @@ def sql_abfrage_fenster_oeffnen():
 
     tk.Label(left, text="Projekte:").pack(anchor="w")
     tree_projekte = ttk.Treeview(left, columns=("name", "status"), show="headings", height=linke_liste_hoehe, selectmode="browse")
-    tree_projekte.heading("name", text="Projekt", anchor="w")
+    tree_projekte.heading("name", text="Projekt", anchor="w", command=lambda: _tv_sortieren(tree_projekte, "name"))
     tree_projekte.column("name", width=max(60, liste_breite - 70), anchor="w")
-    tree_projekte.heading("status", text="Status", anchor="w")
+    tree_projekte.heading("status", text="Status", anchor="w", command=lambda: _tv_sortieren(tree_projekte, "status"))
     tree_projekte.column("status", width=70, anchor="center")
     tree_projekte.pack(fill="x")
     projekt_namen = []
@@ -4895,9 +4930,9 @@ def sql_abfrage_fenster_oeffnen():
         selectmode="browse",
         height=5,
     )
-    tree_workflow.heading("typ", text="Typ", anchor="w")
+    tree_workflow.heading("typ", text="Typ", anchor="w", command=lambda: _tv_sortieren(tree_workflow, "typ"))
     tree_workflow.column("typ", width=80, anchor="w", stretch=False)
-    tree_workflow.heading("name", text="Name", anchor="w")
+    tree_workflow.heading("name", text="Name", anchor="w", command=lambda: _tv_sortieren(tree_workflow, "name"))
     tree_workflow.column("name", width=400, anchor="w", stretch=True)
     wf_scroll = ttk.Scrollbar(workflow_frame, orient="vertical", command=tree_workflow.yview)
     tree_workflow.configure(yscrollcommand=wf_scroll.set)
@@ -6582,9 +6617,9 @@ def sql_abfrage_fenster_oeffnen():
     rel_tree = ttk.Treeview(rel_tree_frame,
                             columns=("bezeichnung", "typ", "pfeil"),
                             show="headings", height=4)
-    rel_tree.heading("bezeichnung", text="Bezeichnung", anchor="w")
-    rel_tree.heading("typ", text="Typ", anchor="w")
-    rel_tree.heading("pfeil", text="QuellTabelle.QuellFeld  →  ZielTabelle.ZielFeld", anchor="w")
+    rel_tree.heading("bezeichnung", text="Bezeichnung", anchor="w", command=lambda: _tv_sortieren(rel_tree, "bezeichnung"))
+    rel_tree.heading("typ", text="Typ", anchor="w", command=lambda: _tv_sortieren(rel_tree, "typ"))
+    rel_tree.heading("pfeil", text="QuellTabelle.QuellFeld  →  ZielTabelle.ZielFeld", anchor="w", command=lambda: _tv_sortieren(rel_tree, "pfeil"))
     rel_tree.column("bezeichnung", width=130, anchor="w")
     rel_tree.column("typ", width=46, anchor="center")
     rel_tree.column("pfeil", width=360, anchor="w")
@@ -8315,7 +8350,7 @@ def sql_abfrage_fenster_oeffnen():
                     for zeile in ergebnis_cache["anzeige_zeilen"]:
                         tv.insert("", "end", values=zeile)
                     for spalte in ergebnis_cache["spalten"]:
-                        tv.heading(spalte, text=ergebnis_spaltenkopf(spalte, anchor="w"), command=lambda c=spalte: ergebnis_sortieren(c))
+                        tv.heading(spalte, text=ergebnis_spaltenkopf(spalte), anchor="w", command=lambda c=spalte: ergebnis_sortieren(c))
                         tv.column(spalte, anchor="w")
                     tree_spalten_breiten_anpassen(tv)
 
@@ -8664,8 +8699,8 @@ def sql_abfrage_fenster_oeffnen():
                         else:
                             daten.sort(key=lambda e: (e[1], e[0].lower()), reverse=eindeutige_sortierung.get("absteigend", True))
                         auswertung_tree.delete(*auswertung_tree.get_children())
-                        auswertung_tree.heading("wert", text=eindeutige_kopftext("wert", "Wert", anchor="w"), command=lambda: eindeutige_werte_sortieren("wert"))
-                        auswertung_tree.heading("anzahl", text=eindeutige_kopftext("anzahl", "Anzahl", anchor="w"), command=lambda: eindeutige_werte_sortieren("anzahl"))
+                        auswertung_tree.heading("wert", text=eindeutige_kopftext("wert", "Wert"),     anchor="w", command=lambda: eindeutige_werte_sortieren("wert"))
+                        auswertung_tree.heading("anzahl", text=eindeutige_kopftext("anzahl", "Anzahl"), anchor="w", command=lambda: eindeutige_werte_sortieren("anzahl"))
                         for wert, anzahl in daten:
                             auswertung_tree.insert("", "end", values=("(leer)" if wert == "" else wert, f"{anzahl:,}".replace(",", ".")))
 
@@ -9482,5 +9517,4 @@ def sql_abfrage_fenster_oeffnen():
     sql_reiter_inhalte_nach_unten_verschieben(delete_tab)
     sql_reiter_inhalte_nach_unten_verschieben(insert_tab)
 
-    tk.Button(button_frame, text="SQL prüfen", width=12, command=pruefen).pack(side="left", padx=(0, 8))
-   
+    tk.Button(button_frame, text="SQL prüfen", width=12, command=pruefen)
