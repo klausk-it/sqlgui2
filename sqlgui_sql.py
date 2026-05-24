@@ -2465,6 +2465,17 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             if n_ue > 0:
                 g_tv.item(iid2, tags=("ue",))
         g_tv.tag_configure("ue", foreground="#CC0000")
+        tree_spalten_breiten_anpassen(g_tv)
+
+        def _g_tv_header_menu(event):
+            m_h = tk.Menu(win2, tearoff=0)
+            m_h.add_command(label="Alle Spaltennamen vollständig anzeigen",
+                            command=lambda: tree_spalten_breiten_anpassen(g_tv))
+            try:
+                m_h.tk_popup(event.x_root, event.y_root)
+            finally:
+                m_h.grab_release()
+        g_tv.bind("<Button-3>", _g_tv_header_menu)
 
         # ── Unteres Panel: Details zur gewählten Gruppe ───────────────────────
         tk.Label(haupt, text="Details zur gewählten Gruppe:",
@@ -2496,6 +2507,16 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         ttk.Scrollbar(frm_unten, orient="horizontal",
                       command=d_tv.xview).grid(row=1, column=0, sticky="ew")
         d_tv.grid(row=0, column=0, sticky="nsew")
+
+        def _d_tv_header_menu(event):
+            m_dh = tk.Menu(win2, tearoff=0)
+            m_dh.add_command(label="Alle Spaltennamen vollständig anzeigen",
+                             command=lambda: tree_spalten_breiten_anpassen(d_tv))
+            try:
+                m_dh.tk_popup(event.x_root, event.y_root)
+            finally:
+                m_dh.grab_release()
+        d_tv.bind("<Button-3>", _d_tv_header_menu)
 
         detail_lbl_var = tk.StringVar(value="")
         tk.Label(haupt, textvariable=detail_lbl_var, anchor="w",
@@ -9460,25 +9481,4 @@ def sql_abfrage_fenster_oeffnen():
                 if _vals and _vals[0] == _aktiv:
                     tree_projekte.selection_set(_item)
                     tree_projekte.focus(_item)
-                    tree_projekte.see(_item)
-                    projekt_status["aktuell"] = _aktiv
-                    _G_ausgewaehltes_projekt["name"] = _aktiv
-                    projekt_name_anzeige.set(_aktiv)
-                    aktiv_var.set(True)
-                    sql_builder_auf_leeren_projektzustand_setzen(_aktiv)
-                    workflow_fuellen(_aktiv)
-                    _on_projekt_ausgewaehlt_fuer_views(_aktiv)
-                    break
-    except Exception:
-        pass
-    beziehung_auswahlwerte_aktualisieren()
-    where_auswahlwerte_aktualisieren()
-    order_by_auswahlwerte_aktualisieren()
-    update_set_auswahlwerte_aktualisieren()
-    update_where_auswahlwerte_aktualisieren()
-    update_set_widgetwerte_laden(0)
-    update_where_widgetwerte_laden(0)
-    delete_where_auswahlwerte_aktualisieren()
-    delete_where_widgetwerte_laden(0)
-    insert_auswahlwerte_aktualisieren()
-    insert_widgetw
+                    tree_projekte.se
