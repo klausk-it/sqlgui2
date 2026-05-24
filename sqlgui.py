@@ -6441,7 +6441,3 @@ def csvfenster_eindeutige_feldwerte_anzeigen(csvfensterid):
     sortiert = sorted(werte)
     text = f"Eindeutige Werte in '{spaltenname}' ({len(sortiert)}):\n\n" + "\n".join(sortiert)
     gui_csv_zelltext_anzeigen(fenster, f"Eindeutige Werte – {spaltenname}", text)
-
-
-
-        
