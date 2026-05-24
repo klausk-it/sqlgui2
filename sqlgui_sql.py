@@ -2447,11 +2447,11 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         g_cols = ("gruppe", "n_ips", "n_ue")
         g_tv = ttk.Treeview(frm_oben, columns=g_cols, show="headings", selectmode="browse")
         g_tv.heading("gruppe", text=f"Gruppe  ({qf})",   anchor="w")
-        g_tv.heading("n_ips",  text="IP-Einträge",        anchor="e")
-        g_tv.heading("n_ue",   text="Überschneidungen",   anchor="e")
+        g_tv.heading("n_ips",  text="IP-Einträge",        anchor="w")
+        g_tv.heading("n_ue",   text="Überschneidungen",   anchor="w")
         g_tv.column("gruppe",  anchor="w", width=200, stretch=False)
-        g_tv.column("n_ips",   anchor="e", width=90,  stretch=False)
-        g_tv.column("n_ue",    anchor="e", width=110, stretch=False)
+        g_tv.column("n_ips",   anchor="w", width=90,  stretch=False)
+        g_tv.column("n_ue",    anchor="w", width=110, stretch=False)
         ttk.Scrollbar(frm_oben, orient="vertical",
                       command=g_tv.yview).grid(row=0, column=1, sticky="ns")
         ttk.Scrollbar(frm_oben, orient="horizontal",
@@ -2477,9 +2477,9 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         def _g_tv_header_menu(event):
             m_h = tk.Menu(win2, tearoff=0)
-            m_h.add_command(label="Optimal (Inhalt anpassen)",
+            m_h.add_command(label="Daten optimal",
                             command=lambda: tree_spalten_breiten_anpassen(g_tv))
-            m_h.add_command(label="Minimum (nur Spaltenüberschrift)",
+            m_h.add_command(label="Spaltennamen optimal",
                             command=lambda: _tv_spalten_minimum(g_tv))
             try:
                 m_h.tk_popup(event.x_root, event.y_root)
@@ -2498,20 +2498,20 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         d_cols = ("z_a", "eintrag_a", "z_b", "eintrag_b", "ol_start", "ol_end", "anz")
         d_tv = ttk.Treeview(frm_unten, columns=d_cols, show="headings", selectmode="browse")
-        d_tv.heading("z_a",       text="Zeile A",          anchor="e")
-        d_tv.heading("eintrag_a", text="Eintrag A",         anchor="w")
-        d_tv.heading("z_b",       text="Zeile B",           anchor="e")
-        d_tv.heading("eintrag_b", text="Eintrag B",         anchor="w")
-        d_tv.heading("ol_start",  text="Überschn. Start",  anchor="w")
-        d_tv.heading("ol_end",    text="Überschn. Ende",   anchor="w")
-        d_tv.heading("anz",       text="Anzahl IPs",        anchor="e")
-        d_tv.column("z_a",        width=55,  anchor="e", stretch=False)
+        d_tv.heading("z_a",       text="Zeile A",         anchor="w")
+        d_tv.heading("eintrag_a", text="Eintrag A",        anchor="w")
+        d_tv.heading("z_b",       text="Zeile B",          anchor="w")
+        d_tv.heading("eintrag_b", text="Eintrag B",        anchor="w")
+        d_tv.heading("ol_start",  text="Überschn. Start", anchor="w")
+        d_tv.heading("ol_end",    text="Überschn. Ende",  anchor="w")
+        d_tv.heading("anz",       text="Anzahl IPs",       anchor="w")
+        d_tv.column("z_a",        width=55,  anchor="w", stretch=False)
         d_tv.column("eintrag_a",  width=160, anchor="w", stretch=False)
-        d_tv.column("z_b",        width=55,  anchor="e", stretch=False)
+        d_tv.column("z_b",        width=55,  anchor="w", stretch=False)
         d_tv.column("eintrag_b",  width=160, anchor="w", stretch=False)
         d_tv.column("ol_start",   width=110, anchor="w", stretch=False)
         d_tv.column("ol_end",     width=110, anchor="w", stretch=False)
-        d_tv.column("anz",        width=70,  anchor="e", stretch=False)
+        d_tv.column("anz",        width=70,  anchor="w", stretch=False)
         ttk.Scrollbar(frm_unten, orient="vertical",
                       command=d_tv.yview).grid(row=0, column=1, sticky="ns")
         ttk.Scrollbar(frm_unten, orient="horizontal",
@@ -2520,9 +2520,9 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         def _d_tv_header_menu(event):
             m_dh = tk.Menu(win2, tearoff=0)
-            m_dh.add_command(label="Optimal (Inhalt anpassen)",
+            m_dh.add_command(label="Daten optimal",
                              command=lambda: tree_spalten_breiten_anpassen(d_tv))
-            m_dh.add_command(label="Minimum (nur Spaltenüberschrift)",
+            m_dh.add_command(label="Spaltennamen optimal",
                              command=lambda: _tv_spalten_minimum(d_tv))
             try:
                 m_dh.tk_popup(event.x_root, event.y_root)
@@ -9476,4 +9476,4 @@ def sql_abfrage_fenster_oeffnen():
     tk.Button(button_frame, text="SQL speichern", width=16, command=speichern).pack(side="left", padx=(0, 8))
     tk.Button(button_frame, text="Schema-Update", width=14, command=schema_update_und_tabellen_aktualisieren).pack(side="left", padx=(0, 8))
     tk.Button(button_frame, text="Projekt speichern", width=15, command=projekt_speichern).pack(side="left", padx=(0, 8))
-    tk.Button(button_frame, text="
+    tk.Button(button_frame, text="Schließen", width=12, command=schliessen).pack(side="lef
