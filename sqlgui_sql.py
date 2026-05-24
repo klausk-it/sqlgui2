@@ -2449,7 +2449,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         g_tv.heading("gruppe", text=f"Gruppe  ({qf})",   anchor="w")
         g_tv.heading("n_ips",  text="IP-Einträge",        anchor="e")
         g_tv.heading("n_ue",   text="Überschneidungen",   anchor="e")
-        g_tv.column("gruppe",  anchor="w", width=200, stretch=True)
+        g_tv.column("gruppe",  anchor="w", width=200, stretch=False)
         g_tv.column("n_ips",   anchor="e", width=90,  stretch=False)
         g_tv.column("n_ue",    anchor="e", width=110, stretch=False)
         ttk.Scrollbar(frm_oben, orient="vertical",
@@ -2467,10 +2467,20 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         g_tv.tag_configure("ue", foreground="#CC0000")
         tree_spalten_breiten_anpassen(g_tv)
 
+        def _tv_spalten_minimum(tv):
+            """Setzt jede Spalte auf die Breite ihres Spaltenkopf-Textes."""
+            import tkinter.font as _tkfont
+            fnt = _tkfont.nametofont("TkDefaultFont")
+            for col in tv["columns"]:
+                kopf = tv.heading(col, "text")
+                tv.column(col, width=fnt.measure(kopf) + 16)
+
         def _g_tv_header_menu(event):
             m_h = tk.Menu(win2, tearoff=0)
-            m_h.add_command(label="Alle Spaltennamen vollständig anzeigen",
+            m_h.add_command(label="Optimal (Inhalt anpassen)",
                             command=lambda: tree_spalten_breiten_anpassen(g_tv))
+            m_h.add_command(label="Minimum (nur Spaltenüberschrift)",
+                            command=lambda: _tv_spalten_minimum(g_tv))
             try:
                 m_h.tk_popup(event.x_root, event.y_root)
             finally:
@@ -2496,9 +2506,9 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         d_tv.heading("ol_end",    text="Überschn. Ende",   anchor="w")
         d_tv.heading("anz",       text="Anzahl IPs",        anchor="e")
         d_tv.column("z_a",        width=55,  anchor="e", stretch=False)
-        d_tv.column("eintrag_a",  width=160, anchor="w", stretch=True)
+        d_tv.column("eintrag_a",  width=160, anchor="w", stretch=False)
         d_tv.column("z_b",        width=55,  anchor="e", stretch=False)
-        d_tv.column("eintrag_b",  width=160, anchor="w", stretch=True)
+        d_tv.column("eintrag_b",  width=160, anchor="w", stretch=False)
         d_tv.column("ol_start",   width=110, anchor="w", stretch=False)
         d_tv.column("ol_end",     width=110, anchor="w", stretch=False)
         d_tv.column("anz",        width=70,  anchor="e", stretch=False)
@@ -2510,8 +2520,10 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         def _d_tv_header_menu(event):
             m_dh = tk.Menu(win2, tearoff=0)
-            m_dh.add_command(label="Alle Spaltennamen vollständig anzeigen",
+            m_dh.add_command(label="Optimal (Inhalt anpassen)",
                              command=lambda: tree_spalten_breiten_anpassen(d_tv))
+            m_dh.add_command(label="Minimum (nur Spaltenüberschrift)",
+                             command=lambda: _tv_spalten_minimum(d_tv))
             try:
                 m_dh.tk_popup(event.x_root, event.y_root)
             finally:
@@ -9464,18 +9476,4 @@ def sql_abfrage_fenster_oeffnen():
     tk.Button(button_frame, text="SQL speichern", width=16, command=speichern).pack(side="left", padx=(0, 8))
     tk.Button(button_frame, text="Schema-Update", width=14, command=schema_update_und_tabellen_aktualisieren).pack(side="left", padx=(0, 8))
     tk.Button(button_frame, text="Projekt speichern", width=15, command=projekt_speichern).pack(side="left", padx=(0, 8))
-    tk.Button(button_frame, text="Schließen", width=12, command=schliessen).pack(side="left")
-    fenster_schliessen_callback_setzen(top, schliessen)
-    top.protocol("WM_DELETE_WINDOW", schliessen)
-
-    tabellen_liste_fuellen()
-    gespeicherte_fuellen()
-    projektliste_fuellen()
-    # Aktives Projekt automatisch vorauswählen, damit der Benutzer es nicht
-    # nach dem Öffnen des SQL Editors noch manuell anklicken muss.
-    try:
-        _aktiv = aktives_projekt_laden()
-        if _aktiv:
-            for _item in tree_projekte.get_children():
-                _vals = tree_projekte.item(_item, "values")
-                if _vals and _vals[0] ==
+    tk.Button(button_frame, text="
