@@ -3744,7 +3744,7 @@ def _workflow_abfrage_fenster_oeffnen_modul(abfragename):
             return
         tv["columns"] = spalten
         for sp in spalten:
-            tv.heading(sp, text=sp, command=lambda s=sp: spalte_sortieren(s, anchor="w"))
+            tv.heading(sp, text=sp, anchor="w", command=lambda s=sp: spalte_sortieren(s))
             tv.column(sp, width=120, anchor="w")
         tv.delete(*tv.get_children())
         for z in zeilen:
@@ -9517,4 +9517,50 @@ def sql_abfrage_fenster_oeffnen():
     sql_reiter_inhalte_nach_unten_verschieben(delete_tab)
     sql_reiter_inhalte_nach_unten_verschieben(insert_tab)
 
-    tk.Button(button_frame, text="SQL prüfen", width=12, command=pruefen)
+    tk.Button(button_frame, text="SQL prüfen", width=12, command=pruefen).pack(side="left", padx=(0, 8))
+    tk.Button(button_frame, text="SQL ausführen", width=16, command=ausfuehren).pack(side="left", padx=(0, 8))
+    tk.Button(button_frame, text="SQL speichern", width=16, command=speichern).pack(side="left", padx=(0, 8))
+    tk.Button(button_frame, text="Schema-Update", width=14, command=schema_update_und_tabellen_aktualisieren).pack(side="left", padx=(0, 8))
+    tk.Button(button_frame, text="Projekt speichern", width=15, command=projekt_speichern).pack(side="left", padx=(0, 8))
+    tk.Button(button_frame, text="Schließen", width=12, command=schliessen).pack(side="left")
+    fenster_schliessen_callback_setzen(top, schliessen)
+    top.protocol("WM_DELETE_WINDOW", schliessen)
+
+    tabellen_liste_fuellen()
+    gespeicherte_fuellen()
+    projektliste_fuellen()
+    # Aktives Projekt automatisch vorauswählen, damit der Benutzer es nicht
+    # nach dem Öffnen des SQL Editors noch manuell anklicken muss.
+    try:
+        _aktiv = aktives_projekt_laden()
+        if _aktiv:
+            for _item in tree_projekte.get_children():
+                _vals = tree_projekte.item(_item, "values")
+                if _vals and _vals[0] == _aktiv:
+                    tree_projekte.selection_set(_item)
+                    tree_projekte.focus(_item)
+                    tree_projekte.see(_item)
+                    projekt_status["aktuell"] = _aktiv
+                    _G_ausgewaehltes_projekt["name"] = _aktiv
+                    projekt_name_anzeige.set(_aktiv)
+                    aktiv_var.set(True)
+                    sql_builder_auf_leeren_projektzustand_setzen(_aktiv)
+                    workflow_fuellen(_aktiv)
+                    _on_projekt_ausgewaehlt_fuer_views(_aktiv)
+                    break
+    except Exception:
+        pass
+    beziehung_auswahlwerte_aktualisieren()
+    where_auswahlwerte_aktualisieren()
+    order_by_auswahlwerte_aktualisieren()
+    update_set_auswahlwerte_aktualisieren()
+    update_where_auswahlwerte_aktualisieren()
+    update_set_widgetwerte_laden(0)
+    update_where_widgetwerte_laden(0)
+    delete_where_auswahlwerte_aktualisieren()
+    delete_where_widgetwerte_laden(0)
+    insert_auswahlwerte_aktualisieren()
+    insert_widgetwerte_laden(0)
+    gespeicherten_zustand_merken()
+    # Theme auf neu geöffnetes SQL-Editor-Fenster anwenden
+    treeview_theme_anwenden(_sql_konfig_lesen("treeview_theme") or "standard", speichern=False)
