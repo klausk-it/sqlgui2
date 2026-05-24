@@ -95,6 +95,26 @@ _PROJEKT_LAYOUT_BEREICH = "Projekt-Layout"
 # Wird von sql_abfrage_fenster_oeffnen() bei Projektwechsel aktualisiert.
 _G_ausgewaehltes_projekt = {"name": None}
 
+
+def _tv_spalten_minimum(tv):
+    """Setzt jede Spalte auf die Breite ihres Spaltenkopf-Textes (Minimum)."""
+    import tkinter.font as _tkfont
+    fnt = _tkfont.nametofont("TkDefaultFont")
+    for col in tv["columns"]:
+        kopf = tv.heading(col, "text")
+        tv.column(col, width=fnt.measure(kopf) + 16)
+
+
+def _tv_spalten_menue_aufbauen(menu, tv, alle_sp_cmd):
+    """Fügt die drei Standard-Spaltenbreiten-Einträge zu einem Menü hinzu."""
+    menu.add_command(label="Daten optimal",
+                     command=lambda: alle_sp_cmd())
+    menu.add_command(label="Spaltennamen optimal",
+                     command=lambda: _tv_spalten_minimum(tv))
+    menu.add_command(label="Alle Spaltennamen vollständig anzeigen",
+                     command=lambda: alle_sp_cmd())
+
+
 _TREEVIEW_THEMES = {
     "standard":  {"bg": "white",   "fg": "black",   "sel_bg": "#0078D7", "sel_fg": "white",   "ttk_theme": None},
     "bernstein": {"bg": "#000000", "fg": "#FFBF00", "sel_bg": "#7A5C00", "sel_fg": "#FFBF00", "ttk_theme": "clam"},
@@ -2467,20 +2487,10 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         g_tv.tag_configure("ue", foreground="#CC0000")
         tree_spalten_breiten_anpassen(g_tv)
 
-        def _tv_spalten_minimum(tv):
-            """Setzt jede Spalte auf die Breite ihres Spaltenkopf-Textes."""
-            import tkinter.font as _tkfont
-            fnt = _tkfont.nametofont("TkDefaultFont")
-            for col in tv["columns"]:
-                kopf = tv.heading(col, "text")
-                tv.column(col, width=fnt.measure(kopf) + 16)
-
         def _g_tv_header_menu(event):
             m_h = tk.Menu(win2, tearoff=0)
-            m_h.add_command(label="Daten optimal",
-                            command=lambda: tree_spalten_breiten_anpassen(g_tv))
-            m_h.add_command(label="Spaltennamen optimal",
-                            command=lambda: _tv_spalten_minimum(g_tv))
+            _tv_spalten_menue_aufbauen(m_h, g_tv,
+                                       lambda: tree_spalten_breiten_anpassen(g_tv))
             try:
                 m_h.tk_popup(event.x_root, event.y_root)
             finally:
@@ -2520,10 +2530,8 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         def _d_tv_header_menu(event):
             m_dh = tk.Menu(win2, tearoff=0)
-            m_dh.add_command(label="Daten optimal",
-                             command=lambda: tree_spalten_breiten_anpassen(d_tv))
-            m_dh.add_command(label="Spaltennamen optimal",
-                             command=lambda: _tv_spalten_minimum(d_tv))
+            _tv_spalten_menue_aufbauen(m_dh, d_tv,
+                                       lambda: tree_spalten_breiten_anpassen(d_tv))
             try:
                 m_dh.tk_popup(event.x_root, event.y_root)
             finally:
@@ -3189,8 +3197,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         region = tv_widget.identify_region(event.x, event.y)
         if region == "heading":
             m = tk.Menu(parent_win, tearoff=0)
-            m.add_command(label="Alle Spaltennamen vollständig anzeigen",
-                          command=alle_sp_anzeigen)
+            _tv_spalten_menue_aufbauen(m, tv_widget, alle_sp_anzeigen)
             try:
                 m.tk_popup(event.x_root, event.y_root)
             finally:
@@ -3221,6 +3228,8 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         # Block 2: Anzeigen
         m.add_command(label="Feldinhalt im Lesefenster anzeigen", command=feld_im_lesefenster)
         m.add_command(label="Zeile im Lesefenster anzeigen",      command=zeile_im_lesefenster)
+        m.add_command(label="Daten optimal",                      command=alle_sp_anzeigen)
+        m.add_command(label="Spaltennamen optimal",               command=lambda: _tv_spalten_minimum(tv_widget))
         m.add_command(label="Alle Spaltennamen vollständig anzeigen", command=alle_sp_anzeigen)
         m.add_separator()
         # Block 3: Filtern
@@ -9116,8 +9125,8 @@ def sql_abfrage_fenster_oeffnen():
                     region = tv.identify_region(event.x, event.y)
                     if region == "heading":
                         menu = tk.Menu(res, tearoff=0)
-                        menu.add_command(label="Alle Spaltennamen vollständig anzeigen",
-                                         command=lambda: tree_spalten_breiten_anpassen(tv))
+                        _tv_spalten_menue_aufbauen(menu, tv,
+                                                   lambda: tree_spalten_breiten_anpassen(tv))
                         try:
                             menu.tk_popup(event.x_root, event.y_root)
                         finally:
@@ -9141,6 +9150,8 @@ def sql_abfrage_fenster_oeffnen():
                     # Block 2: Anzeigen
                     menu.add_command(label="Feldinhalt im Lesefenster anzeigen", command=ergebnis_feld_im_lesefenster_anzeigen)
                     menu.add_command(label="Zeile im Lesefenster anzeigen", command=ergebnis_zeile_im_lesefenster_anzeigen)
+                    menu.add_command(label="Daten optimal",                  command=lambda: tree_spalten_breiten_anpassen(tv))
+                    menu.add_command(label="Spaltennamen optimal",           command=lambda: _tv_spalten_minimum(tv))
                     menu.add_command(label="Alle Spaltennamen vollständig anzeigen",
                                      command=lambda: tree_spalten_breiten_anpassen(tv))
                     menu.add_separator()
@@ -9472,8 +9483,4 @@ def sql_abfrage_fenster_oeffnen():
     sql_reiter_inhalte_nach_unten_verschieben(insert_tab)
 
     tk.Button(button_frame, text="SQL prüfen", width=12, command=pruefen).pack(side="left", padx=(0, 8))
-    tk.Button(button_frame, text="SQL ausführen", width=16, command=ausfuehren).pack(side="left", padx=(0, 8))
-    tk.Button(button_frame, text="SQL speichern", width=16, command=speichern).pack(side="left", padx=(0, 8))
-    tk.Button(button_frame, text="Schema-Update", width=14, command=schema_update_und_tabellen_aktualisieren).pack(side="left", padx=(0, 8))
-    tk.Button(button_frame, text="Projekt speichern", width=15, command=projekt_speichern).pack(side="left", padx=(0, 8))
-    tk.Button(button_frame, text="Schließen", width=12, command=schliessen).pack(side="lef
+    tk.Button(button_frame, text="SQL a

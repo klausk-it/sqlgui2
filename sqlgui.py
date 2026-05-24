@@ -3928,6 +3928,14 @@ def tabellenfenster_heading_oder_zelle_rechtsklick(event, fenster_id):
     )
     menu.add_separator()
     menu.add_command(
+        label="Daten optimal",
+        command=lambda: tabellenfenster_daten_optimal(fenster_id)
+    )
+    menu.add_command(
+        label="Spaltennamen optimal",
+        command=lambda: tabellenfenster_spaltennamen_optimal(fenster_id)
+    )
+    menu.add_command(
         label="Alle Spaltennamen vollständig anzeigen",
         command=lambda: tabellenfenster_spaltennamen_vollstaendig_anzeigen(fenster_id)
     )
@@ -3962,6 +3970,41 @@ def tabellenfenster_spaltennamen_vollstaendig_anzeigen(fenster_id):
         neue_breite = max(min_breite, aktuelle_breite)
         tree_widget.column(spalte, width=neue_breite, minwidth=min_breite)
     tabellenfenster_temp_hinweis(fenster_id, " * Spaltenbreiten auf Spaltennamen angepasst")
+
+
+def tabellenfenster_spaltennamen_optimal(fenster_id):
+    """Setzt jede Spalte exakt auf die Breite ihres Spaltenkopf-Textes (auch verkleinern)."""
+    cache = G_tabellen_cache.get(fenster_id)
+    if not cache:
+        return
+    tree_widget = cache["tree"]
+    tree_font = font.nametofont("TkDefaultFont")
+    for spalte in list(tree_widget["columns"]):
+        breite = tree_font.measure(str(spalte)) + 24
+        tree_widget.column(spalte, width=breite, minwidth=breite)
+    tabellenfenster_temp_hinweis(fenster_id, " * Spalten auf Spaltennamen-Minimum gesetzt")
+
+
+def tabellenfenster_daten_optimal(fenster_id):
+    """Setzt Spaltenbreiten anhand des längsten Zellinhalts (Header und Daten)."""
+    cache = G_tabellen_cache.get(fenster_id)
+    if not cache:
+        return
+    tree_widget = cache["tree"]
+    tree_font = font.nametofont("TkDefaultFont")
+    spalten = list(tree_widget["columns"])
+    breiten = {s: tree_font.measure(str(s)) + 24 for s in spalten}
+    for iid in tree_widget.get_children():
+        vals = tree_widget.item(iid, "values")
+        for i, val in enumerate(vals):
+            if i < len(spalten):
+                b = tree_font.measure(str(val)) + 16
+                if b > breiten[spalten[i]]:
+                    breiten[spalten[i]] = b
+    for spalte, breite in breiten.items():
+        breite = min(breite, 400)
+        tree_widget.column(spalte, width=breite, minwidth=20)
+    tabellenfenster_temp_hinweis(fenster_id, " * Spaltenbreiten auf Daten optimiert")
 
 
 def tabellenfenster_spalte_hinzufuegen(fenster_id, spalte_id):
@@ -6400,44 +6443,4 @@ def csvfenster_feldfilter_setzen(csvfensterid):
         gefiltert = [z for z in rows_alle if index < len(z) and str(z[index]) == filterwert]
         daten["sichtbarerows"] = gefiltert
         gui_csv_tree_neu_aufbauen(csvfensterid, G_csv_fenster)
-        csvfenstertemphinweis(csvfensterid, f" * Filter aktiv: {spaltenname} = {filterwert} ({len(gefiltert)} Zeilen)")
-        dialog.destroy()
-
-    tk.Button(btn_frame, text="Abbrechen", command=dialog.destroy, width=12).pack(side="right")
-    tk.Button(btn_frame, text="Hiernach filtern", command=anwenden, width=14).pack(side="right", padx=(0, 8))
-    dialog.bind("<Return>", lambda e: anwenden())
-
-
-def csvfenster_feldfilter_aufheben(csvfensterid):
-    """Hebt den aktuellen CSV-Filter auf und zeigt alle Zeilen wieder an."""
-    daten = G_csv_fenster.get(csvfensterid)
-    if not daten:
-        return
-    if "sichtbarerows" in daten:
-        del daten["sichtbarerows"]
-    gui_csv_tree_neu_aufbauen(csvfensterid, G_csv_fenster)
-    csvfenstertemphinweis(csvfensterid, " * Filter aufgehoben")
-
-
-def csvfenster_eindeutige_feldwerte_anzeigen(csvfensterid):
-    """Zeigt eindeutige Werte der aktuellen Spalte im Lesefenster an."""
-    daten = G_csv_fenster.get(csvfensterid)
-    if not daten:
-        return
-    fenster = daten["fenster"]
-    spalte_id = daten.get("kontext_spalte_id")
-    if not spalte_id:
-        messagebox.showwarning("Eindeutige Werte", "Bitte zuerst eine Spalte auswählen.", parent=fenster)
-        return
-    index = int(spalte_id.replace("#", "")) - 1
-    header = daten.get("header", [])
-    spaltenname = header[index] if index < len(header) else f"Spalte{index+1}"
-    tree = daten["tree"]
-    werte = set()
-    for item_id in tree.get_children():
-        vals = tree.item(item_id, "values")
-        if index < len(vals):
-            werte.add(str(vals[index]))
-    sortiert = sorted(werte)
-    text = f"Eindeutige Werte in '{spaltenname}' ({len(sortiert)}):\n\n" + "\n".join(sortiert)
-    gui_csv_zelltext_anzeigen(fenster, f"Eindeutige Werte – {spaltenname}", text)
+        csvfenstertemphinweis(csvfenster
