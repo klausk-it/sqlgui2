@@ -3491,7 +3491,7 @@ def _workflow_ketten_fenster_oeffnen(rel_id_str, projektname):
     for sp in angezeigte_spalten:
         quell_tv.heading(sp, text=sp, anchor="w",
                          command=lambda c=sp: _tv_ketten_sortiere(quell_tv, c))
-        quell_tv.column(sp, width=80, anchor="w", minwidth=40)
+        quell_tv.column(sp, width=80, anchor="w", minwidth=40, stretch=False)
     for zeile in quell_zeilen:
         quell_tv.insert("", "end", values=[str(v) if v is not None else "" for v in zeile])
     _tv_spalten_auto_breite(quell_tv, angezeigte_spalten, quell_zeilen)
@@ -3637,7 +3637,7 @@ def _workflow_ketten_fenster_oeffnen(rel_id_str, projektname):
             for sp in spalten:
                 ziel_tv.heading(sp, text=sp, anchor="w",
                                 command=lambda c=sp: _tv_ketten_sortiere(ziel_tv, c))
-                ziel_tv.column(sp, width=80, anchor="w", minwidth=40)
+                ziel_tv.column(sp, width=80, anchor="w", minwidth=40, stretch=False)
         ziel_tv.delete(*ziel_tv.get_children())
         for zeile in zeilen:
             ziel_tv.insert("", "end", values=[str(v) if v is not None else "" for v in zeile])
@@ -3745,7 +3745,7 @@ def _workflow_abfrage_fenster_oeffnen_modul(abfragename):
         tv["columns"] = spalten
         for sp in spalten:
             tv.heading(sp, text=sp, anchor="w", command=lambda s=sp: spalte_sortieren(s))
-            tv.column(sp, width=120, anchor="w")
+            tv.column(sp, width=120, anchor="w", stretch=False)
         tv.delete(*tv.get_children())
         for z in zeilen:
             tv.insert("", "end", values=z)
