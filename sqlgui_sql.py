@@ -1114,8 +1114,8 @@ _workflow_offene_sql_fenster    = {}
 _workflow_offene_ketten_fenster = {}   # key = str(rel_id)
 
 
-def _tv_spalten_auto_breite(tv, spalten_sichtbar, zeilen, pad=14, max_b=280, min_b=40):
-    """Setzt Treeview-Spaltenbreiten automatisch anhand von Inhalt und Header.
+def _tv_spalten_auto_breite(tv, spalten_sichtbar, zeilen, pad_kopf=24, pad_daten=16, max_b=400, min_b=40):
+    """Setzt Treeview-Spaltenbreiten automatisch: max(Spaltenkopf, längster Datenwert).
 
     spalten_sichtbar: Liste der angezeigten Spaltennamen (in Reihenfolge).
     zeilen: Sequenz von Tupeln mit den Zeilenwerten (alle Spalten, nicht nur sichtbare).
@@ -1123,21 +1123,20 @@ def _tv_spalten_auto_breite(tv, spalten_sichtbar, zeilen, pad=14, max_b=280, min
     """
     try:
         import tkinter.font as _tkfont
-        _fnt = _tkfont.Font(family="Segoe UI", size=9)
-        measure = _fnt.measure
+        measure = _tkfont.nametofont("TkDefaultFont").measure
     except Exception:
         def measure(t): return len(str(t)) * 7   # Fallback: 7px pro Zeichen
 
     # Indizes der sichtbaren Spalten in der Gesamt-Spaltenliste (tv["columns"])
     alle_spalten = list(tv["columns"])
     for sp in spalten_sichtbar:
-        breite = measure(sp) + pad          # Kopfzeile
+        breite = measure(str(sp)) + pad_kopf      # Spaltenkopf (mehr Padding für Sort-Pfeil)
         if sp in alle_spalten:
             col_idx = alle_spalten.index(sp)
             for zeile in zeilen:
                 try:
                     wert = str(zeile[col_idx]) if zeile[col_idx] is not None else ""
-                    breite = max(breite, measure(wert) + pad)
+                    breite = max(breite, measure(wert) + pad_daten)
                 except (IndexError, TypeError):
                     pass
         tv.column(sp, width=max(min_b, min(breite, max_b)))
