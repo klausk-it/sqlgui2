@@ -2105,6 +2105,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             rel_row = chosen[0]
 
         rel_id, bez_titel, qt, qf, kette_json, ip_feld = rel_row
+        rel_id_str = str(rel_id)
 
         # ── 4. Kette parsen ───────────────────────────────────────────────────
         try:
@@ -2529,10 +2530,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _ue_pos_key = f"ue_pos_{rel_id_str}"
         _ue_pos = _sql_konfig_lesen(_ue_pos_key)
         if _ue_pos:
-            try:
-                win2.geometry(_ue_pos)
-            except Exception:
-                pass
+            win2.after(50, lambda _g=_ue_pos: win2.geometry(_g))
         def _ue_pos_speichern(event=None):
             try:
                 _sql_konfig_schreiben(_ue_pos_key,
