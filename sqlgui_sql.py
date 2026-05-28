@@ -12,6 +12,7 @@ damit Abhaengigkeiten explizit und einheitlich uebergeben werden.
 """
 
 import json
+import re
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
 from datetime import datetime
@@ -97,6 +98,15 @@ _G_ausgewaehltes_projekt = {"name": None}
 
 
 _TV_SORT_ZUSTAND = {}   # {(id(tv), col_id): aufsteigend_bool}
+_IP_RE = re.compile(r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})')
+
+def _ip_zu_int(s):
+    """Erste IPv4-Adresse aus s als 32-Bit-Integer, oder None."""
+    m = _IP_RE.match(str(s).strip())
+    if not m:
+        return None
+    return (int(m.group(1)) << 24) | (int(m.group(2)) << 16) | (int(m.group(3)) << 8) | int(m.group(4))
+
 
 
 def _tv_sortieren(tv, col):
@@ -113,11 +123,14 @@ def _tv_sortieren(tv, col):
 
     def _sk(item):
         v = item[0][idx] if idx < len(item[0]) else ""
+        vs = str(v).strip()
+        ip_int = _ip_zu_int(vs)
+        if ip_int is not None:
+            return (0, ip_int, "")
         try:
-            return (0, float(str(v).replace(",", ".").replace(" ", "").replace("\u202f", "")))
+            return (1, float(vs.replace(",", ".").replace(" ", "")), "")
         except (ValueError, TypeError):
-            return (1, str(v).lower())
-
+            return (2, 0, vs.lower())
     items.sort(key=_sk, reverse=not aufsteigend)
     for _, iid in items:
         tv.move(iid, "", "end")
@@ -2128,9 +2141,36 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         else:
             _ip_alias     = letzter_alias
             _ip_feld_name = ip_feld
+        # DisplayName auto-erkennen (PRAGMA auf ip_feld-Tabelle)
+        _disp_feld_sql  = ""
+        _disp_feld_name = None
+        _prio_kw_disp   = ("display", "name", "bezeichn", "label", "titel", "title")
+        try:
+            _pr_disp_tab = _ip_tab_name if "." in ip_feld else (
+                aktive_schritte[-1]["zu_tab"] if aktive_schritte else qt)
+            _pr_disp_alias = _ip_alias
+            _vb_dpr = sqlite_verbindung_oeffnen()
+            _pr_disp_rows = _vb_dpr.execute(
+                "PRAGMA table_info(" + sql_identifier(_pr_disp_tab) + ")"
+            ).fetchall()
+            _vb_dpr.close()
+            for _pr_d in _pr_disp_rows:
+                _pf_d = _pr_d[1]
+                if _pf_d == _ip_feld_name:
+                    continue
+                if any(_kw in _pf_d.lower() for _kw in _prio_kw_disp):
+                    _disp_feld_name = _pf_d
+                    _disp_feld_sql  = (
+                        f", {_pr_disp_alias}.{sql_identifier(_pf_d)} AS disp_wert"
+                    )
+                    break
+        except Exception:
+            pass
+
         sql_ana = (
             f"SELECT {aliases[0]}.{sql_identifier(qf)} AS gruppe, "
-            f"{_ip_alias}.{sql_identifier(_ip_feld_name)} AS ip_wert "
+            f"{_ip_alias}.{sql_identifier(_ip_feld_name)} AS ip_wert"
+            f"{_disp_feld_sql} "
             f"FROM {sql_identifier(qt)} {aliases[0]} "
             f"{joins_sql}"
         )
@@ -2209,12 +2249,17 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         # ── 7. Gruppen aus DB-Zeilen aufbauen ────────────────────────────────────
         gruppen = {}
-        for zn, (gw_raw, iw_raw) in enumerate(db_zeilen, 1):
+        _zn_zu_disp = {}   # zn → DisplayName-String
+        for zn, row in enumerate(db_zeilen, 1):
+            gw_raw = row[0]
+            iw_raw = row[1]
             gw = str(gw_raw) if gw_raw is not None else "(leer)"
             iw = str(iw_raw) if iw_raw is not None else ""
             if gw not in gruppen:
                 gruppen[gw] = []
             gruppen[gw].append((zn, iw))
+            if len(row) > 2 and row[2] is not None:
+                _zn_zu_disp[zn] = str(row[2])
 
         # ── 8. Sweep je Gruppe ────────────────────────────────────────────────
         gruppen_info = []    # [(grp_wert, n_ips, n_ue, details_list), ...]
@@ -2222,6 +2267,13 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             details = _sweep(eintr)
             gruppen_info.append((gw, len(eintr), len(details), details))
         gruppen_info.sort(key=lambda x: (-x[2], str(x[0]).lower()))
+
+        # Alle Zeilennummern die an mind. einer Überschneidung beteiligt sind
+        _overlap_zns = set()
+        for _gw_ov, _ni_ov, _nu_ov, _det_ov in gruppen_info:
+            for _r1_ov, _d1_ov, _r2_ov, _d2_ov, *_ in _det_ov:
+                _overlap_zns.add(_r1_ov)
+                _overlap_zns.add(_r2_ov)
 
         gesamt_ue   = sum(g[2] for g in gruppen_info)
         n_mit_ue    = sum(1    for g in gruppen_info if g[2] > 0)
@@ -2473,6 +2525,22 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         win2.geometry("1100x680")
         win2.minsize(700, 440)
         fenster_registrieren(win2, "Überschneidungen Kette", win2.title())
+        # Letzte Position wiederherstellen
+        _ue_pos_key = f"ue_pos_{rel_id_str}"
+        _ue_pos = _sql_konfig_lesen(_ue_pos_key)
+        if _ue_pos:
+            try:
+                win2.geometry(_ue_pos)
+            except Exception:
+                pass
+        def _ue_pos_speichern(event=None):
+            try:
+                _sql_konfig_schreiben(_ue_pos_key,
+                    f"{win2.winfo_width()}x{win2.winfo_height()}"
+                    f"+{win2.winfo_x()}+{win2.winfo_y()}")
+            except Exception:
+                pass
+        win2.bind("<Configure>", _ue_pos_speichern)
 
         haupt = tk.Frame(win2, padx=8, pady=8)
         haupt.pack(fill="both", expand=True)
@@ -2498,27 +2566,76 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         frm_oben.rowconfigure(0, weight=1)
         frm_oben.columnconfigure(0, weight=1)
 
-        g_cols = ("gruppe", "n_ips", "n_ue")
-        g_tv = ttk.Treeview(frm_oben, columns=g_cols, show="headings", selectmode="browse")
-        g_tv.heading("gruppe", text=f"Gruppe  ({qf})",   anchor="w", command=lambda: _tv_sortieren(g_tv, "gruppe"))
-        g_tv.heading("n_ips",  text="IP-Einträge",        anchor="w", command=lambda: _tv_sortieren(g_tv, "n_ips"))
-        g_tv.heading("n_ue",   text="Überschneidungen",   anchor="w", command=lambda: _tv_sortieren(g_tv, "n_ue"))
-        g_tv.column("gruppe",  anchor="w", width=200, stretch=False)
-        g_tv.column("n_ips",   anchor="w", width=90,  stretch=False)
-        g_tv.column("n_ue",    anchor="w", width=110, stretch=False)
+        g_cols = ("gruppe", "ip_wert", "n_ips", "n_ue")
+        g_tv = ttk.Treeview(frm_oben, columns=g_cols, show="tree headings",
+                             selectmode="browse", height=8)
+        g_tv.column("#0",      width=20,  stretch=False, minwidth=20)
+        g_tv.heading("gruppe",  text=f"Gruppe  ({qf})",  anchor="w",
+                     command=lambda: _tv_sortieren(g_tv, "gruppe"))
+        g_tv.heading("ip_wert", text="IP / DisplayName", anchor="w",
+                     command=lambda: _tv_sortieren(g_tv, "ip_wert"))
+        g_tv.heading("n_ips",   text="IP-Einträge",       anchor="w",
+                     command=lambda: _tv_sortieren(g_tv, "n_ips"))
+        g_tv.heading("n_ue",    text="Überschneidungen",  anchor="w",
+                     command=lambda: _tv_sortieren(g_tv, "n_ue"))
+        g_tv.column("gruppe",   anchor="w", width=200, stretch=True)
+        g_tv.column("ip_wert",  anchor="w", width=200, stretch=True)
+        g_tv.column("n_ips",    anchor="w", width=80,  stretch=False)
+        g_tv.column("n_ue",     anchor="w", width=110, stretch=False)
         ttk.Scrollbar(frm_oben, orient="vertical",
                       command=g_tv.yview).grid(row=0, column=1, sticky="ns")
         ttk.Scrollbar(frm_oben, orient="horizontal",
                       command=g_tv.xview).grid(row=1, column=0, sticky="ew")
         g_tv.grid(row=0, column=0, sticky="nsew")
 
-        iid_zu_details = {}
+        iid_zu_details  = {}
+        iid_zu_gw       = {}
+        _kind_zu_eltern = {}
         for gw, n_ip, n_ue, det in gruppen_info:
-            iid2 = g_tv.insert("", "end", values=(gw, n_ip, n_ue))
+            _tags = ("ue",) if n_ue > 0 else ()
+            iid2 = g_tv.insert("", "end", values=(gw, "", n_ip, n_ue), tags=_tags)
             iid_zu_details[iid2] = det
-            if n_ue > 0:
-                g_tv.item(iid2, tags=("ue",))
-        g_tv.tag_configure("ue", foreground="#CC0000")
+            iid_zu_gw[iid2] = gw
+            # A/B-Sets für diese Gruppe
+            _a_zns_set  = set()
+            _b_zns_set  = set()
+            _a_zu_b_lst = {}   # r1_zn → [(r2_zn, d2_ip, ol_s, ol_e)]
+            for _dt in det:
+                _a_zns_set.add(_dt[0])
+                _b_zns_set.add(_dt[2])
+                _a_zu_b_lst.setdefault(_dt[0], []).append(
+                    (_dt[2], _dt[3], _dt[4], _dt[5]))
+            _b_only_zns = _b_zns_set - _a_zns_set
+            # Kindzeilen aufsteigend nach IP sortieren
+            _sorted_eintr = sorted(
+                gruppen.get(gw, []),
+                key=lambda _e: (_k_parse(_e[1]) or (0, 0))[0]
+            )
+            for _zn_k, _iw_k in _sorted_eintr:
+                if _zn_k in _b_only_zns:
+                    continue
+                _tag_k  = ("ue",) if _zn_k in _a_zns_set else ("detail",)
+                _disp_k = _zn_zu_disp.get(_zn_k, "")
+                _col1_k = _disp_k if _disp_k else _iw_k
+                _col2_k = _iw_k   if _disp_k else ""
+                _kiid = g_tv.insert(iid2, "end",
+                                    values=(gw, _col1_k + ("  " + _col2_k if _col2_k else ""),
+                                            "", ""),
+                                    tags=_tag_k)
+                _kind_zu_eltern[_kiid] = iid2
+                # B-Partner direkt darunter (mit ↳ Prefix, orange)
+                for _r2_b, _d2_b, _ol_s_b, _ol_e_b in _a_zu_b_lst.get(_zn_k, []):
+                    _disp_b = _zn_zu_disp.get(_r2_b, "")
+                    _col1_b = "  ↳ " + (_disp_b if _disp_b else _d2_b)
+                    _col2_b = ("  " + _d2_b) if _disp_b else _ol_s_b
+                    _bkiid = g_tv.insert(iid2, "end",
+                                         values=(gw, _col1_b + _col2_b,
+                                                 _ol_s_b, _ol_e_b),
+                                         tags=("ue_pair",))
+                    _kind_zu_eltern[_bkiid] = iid2
+        g_tv.tag_configure("ue",      foreground="#CC0000")
+        g_tv.tag_configure("detail",  foreground="#777777")
+        g_tv.tag_configure("ue_pair", foreground="#995500")
         tree_spalten_breiten_anpassen(g_tv)
 
         def _g_tv_header_menu(event):
@@ -2580,8 +2697,10 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             sel = g_tv.selection()
             if not sel:
                 return
-            det = iid_zu_details.get(sel[0], [])
-            gw  = g_tv.item(sel[0], "values")[0]
+            # Kindzeile → zur Elternzeile hochsteigen
+            _eiid = _kind_zu_eltern.get(sel[0], sel[0])
+            det = iid_zu_details.get(_eiid, [])
+            gw  = iid_zu_gw.get(_eiid, g_tv.item(_eiid, "values")[0])
             d_tv.delete(*d_tv.get_children())
             for r1, d1, r2, d2, ol_s, ol_e, cnt in det:
                 d_tv.insert("", "end", values=(r1, d1, r2, d2, ol_s, ol_e, cnt))
@@ -3409,7 +3528,7 @@ def _workflow_ketten_fenster_oeffnen(rel_id_str, projektname):
         sichtb = alle if (not dc_list or "#all" in dc_list) else dc_list
 
         key = (id(tv), sp)
-        aufsteigend = not _sort_richtung.get(key, True)
+        aufsteigend = not _sort_richtung.get(key, False)  # erster Klick = aufsteigend
         _sort_richtung[key] = aufsteigend
 
         items = [(tv.item(iid, "values"), iid) for iid in tv.get_children()]
@@ -3420,10 +3539,14 @@ def _workflow_ketten_fenster_oeffnen(rel_id_str, projektname):
 
         def _sk(item):
             v = item[0][idx] if idx < len(item[0]) else ""
+            vs = str(v).strip()
+            ip_int = _ip_zu_int(vs)
+            if ip_int is not None:
+                return (0, ip_int, "")
             try:
-                return (0, float(str(v).replace(",", ".")))
+                return (1, float(vs.replace(",", ".")), "")
             except (ValueError, TypeError):
-                return (1, str(v).lower())
+                return (2, 0, vs.lower())
 
         items.sort(key=_sk, reverse=not aufsteigend)
         for _, iid in items:
@@ -3637,6 +3760,18 @@ def _workflow_ketten_fenster_oeffnen(rel_id_str, projektname):
                 ziel_tv.heading(sp, text=sp, anchor="w",
                                 command=lambda c=sp: _tv_ketten_sortiere(ziel_tv, c))
                 ziel_tv.column(sp, width=80, anchor="w", minwidth=40, stretch=False)
+        # Auto-Sort: erste IP-Spalte erkennen, Zeilen aufsteigend sortieren
+        _probe_z = zeilen[:20]
+        _ip_sp_idx = None
+        for _zi in range(len(spalten)):
+            if sum(1 for _zr in _probe_z if _zi < len(_zr) and
+                   _ip_zu_int(str(_zr[_zi]).strip()) is not None
+                   ) >= max(1, len(_probe_z) // 2):
+                _ip_sp_idx = _zi
+                break
+        if _ip_sp_idx is not None:
+            zeilen = sorted(zeilen,
+                key=lambda _r: _ip_zu_int(str(_r[_ip_sp_idx]).strip()) or (1 << 32))
         ziel_tv.delete(*ziel_tv.get_children())
         for zeile in zeilen:
             ziel_tv.insert("", "end", values=[str(v) if v is not None else "" for v in zeile])
@@ -3757,14 +3892,16 @@ def _workflow_abfrage_fenster_oeffnen_modul(abfragename):
         if not items:
             return
         reverse = sortier_zustand.get(sp, False)
-        try:
-            items.sort(key=lambda i: (
-                tv.set(i, sp) == "" or tv.set(i, sp) is None,
-                float(tv.set(i, sp)) if tv.set(i, sp).replace(".", "", 1).replace("-", "", 1).isdigit() else None,
-                str(tv.set(i, sp)).lower()
-            ), reverse=reverse)
-        except Exception:
-            items.sort(key=lambda i: str(tv.set(i, sp)).lower(), reverse=reverse)
+        def _sk_sp(i):
+            vs = str(tv.set(i, sp)).strip()
+            ip = _ip_zu_int(vs)
+            if ip is not None:
+                return (0, ip, "")
+            try:
+                return (1, float(vs.replace(",", ".")), "")
+            except (ValueError, TypeError):
+                return (2, 0, vs.lower())
+        items.sort(key=_sk_sp, reverse=reverse)
         for idx, item in enumerate(items):
             tv.move(item, "", idx)
         sortier_zustand[sp] = not reverse
@@ -8361,12 +8498,18 @@ def sql_abfrage_fenster_oeffnen():
                     if spaltenname not in ergebnis_cache["spalten"]:
                         return
                     index = ergebnis_cache["spalten"].index(spaltenname)
-                    absteigend = not ergebnis_cache["sortierung"].get(spaltenname, False)
+                    absteigend = not ergebnis_cache["sortierung"].get(spaltenname, True)
                     ergebnis_cache["sortierung"] = {spaltenname: absteigend}
-                    ergebnis_cache["anzeige_zeilen"].sort(
-                        key=lambda row: str(row[index] if index < len(row) else "").lower(),
-                        reverse=absteigend
-                    )
+                    def _sk_erg(row, _idx=index):
+                        vs = str(row[_idx] if _idx < len(row) else "").strip()
+                        ip = _ip_zu_int(vs)
+                        if ip is not None:
+                            return (0, ip, "")
+                        try:
+                            return (1, float(vs.replace(",", ".")), "")
+                        except (ValueError, TypeError):
+                            return (2, 0, vs.lower())
+                    ergebnis_cache["anzeige_zeilen"].sort(key=_sk_erg, reverse=absteigend)
                     ergebnis_anzeigen()
                     debug_log(f"SQL-Ergebnis sortiert: spalte={spaltenname}, absteigend={absteigend}", "allgemein")
 

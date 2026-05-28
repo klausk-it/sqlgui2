@@ -110,6 +110,14 @@ _ADMIN_KONFIG_BEREICH = "Admin"
 G_tabellenfenster = {}
 G_tabellenfenster_nach_name = {}
 G_tabellen_cache = {}
+_IP_RE_GUI = re.compile(r'^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})')
+
+def _ip_zu_int(s):
+    """Erste IPv4-Adresse aus s als 32-Bit-Integer, oder None."""
+    m = _IP_RE_GUI.match(str(s).strip())
+    if not m:
+        return None
+    return (int(m.group(1)) << 24) | (int(m.group(2)) << 16) | (int(m.group(3)) << 8) | int(m.group(4))
 G_rahmenfarbe = ""
 G_rahmenfarbe2 = ""
 G_rahmenfarbe3 = ""
@@ -2083,16 +2091,19 @@ def tabellenfenster_sortieren(fenster_id, spaltenname):
         return
     tree_widget = cache["tree"]
     index = cache["spalten"].index(spaltenname)
-    absteigend = not cache["sortierung"].get(spaltenname, False)
+    absteigend = not cache["sortierung"].get(spaltenname, True)
     cache["sortierung"] = {spaltenname: absteigend}
 
     def _sort_key(row):
         wert = row[index] if index < len(row) else None
-        s = "" if wert is None else str(wert)
+        s = "" if wert is None else str(wert).strip()
+        ip_int = _ip_zu_int(s)
+        if ip_int is not None:
+            return (0, ip_int, "")
         try:
-            return (0, float(s), s)   # Zahl: numerisch sortieren
+            return (1, float(s.replace(",", ".")), "")  # Zahl: numerisch
         except (ValueError, TypeError):
-            return (1, 0.0, s.lower())  # Text: alphabetisch, nach Zahlen
+            return (2, 0, s.lower())  # Text: alphabetisch
 
     cache["zeilen"].sort(key=_sort_key, reverse=absteigend)
     tree_widget.delete(*tree_widget.get_children())
@@ -4647,6 +4658,21 @@ def tabellenfenster_queue_pruefen(fenster_id):
         if not cache["spaltenbreite_fertig"]:
             tabellenfenster_spalten_breiten_anpassen(fenster_id)
             cache["spaltenbreite_fertig"] = True
+            # Auto-Sort: erste Spalte mit überwiegend IP-Werten aufsteigend sortieren
+            _probe = cache["zeilen"][:20]
+            _ip_spalte = None
+            for _si, _sp in enumerate(cache["spalten"]):
+                if not _probe:
+                    break
+                _treffer = sum(
+                    1 for _r in _probe
+                    if _si < len(_r) and _IP_RE_GUI.match(str(_r[_si]).strip())
+                )
+                if _treffer >= max(1, len(_probe) // 2):
+                    _ip_spalte = _sp
+                    break
+            if _ip_spalte:
+                tabellenfenster_sortieren(fenster_id, _ip_spalte)
         gesamt_formatiert = f"{cache['anzahl']:,}".replace(",", ".")
         tabellenfenster_basis_titel_setzen(fenster_id, f"  * Tabelle geladen ({gesamt_formatiert} Datensätze)")
         return

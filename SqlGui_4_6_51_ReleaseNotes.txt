@@ -1753,4 +1753,33 @@ VERSIONSHISTORIE (KurzÃ¼bersicht)
            Überschneidungen, Kette, alle weiteren Treeviews),
            Spaltenüberschriften überall linksbündig (anchor="w") — vorher Mix
            aus mittig und linksbündig,
-           Sortie
+           Sortierung überall: Klick auf alle Treeview-Spaltenköpfe in allen
+           Fenstern (Fensterliste typ/titel/status, Tabellenfenster, SQL-Ergebnis,
+           Ketten-Fenster, CSV-Import, Überschneidungen, alle Treeviews),
+           Ketten-Fenster: stretch=False auf quell_tv und ziel_tv (Spaltenbreiten
+           bleiben kompakt, kein automatisches Auffüllen bis Fensterrand),
+           Ketten-Fenster: _tv_spalten_auto_breite verbessert (Kopf- und Daten-
+           breite kombiniert, bis max_b=400 Pixel, Mindestbreite min_b=40 Pixel),
+           IP-Sortierung als Integer: IPv4-Adressen werden vor dem Sortieren in
+           32-Bit-Integer umgewandelt (10.6.x < 10.224.x statt lexikografisch),
+           gilt für alle Treeviews (Tabellenfenster, SQL-Ergebnis, Ketten-Fenster,
+           Überschneidungen-Fenster),
+           Erster Spaltenklick sortiert aufsteigend (vorher: erster Klick
+           absteigend, zweiter Klick aufsteigend — jetzt: einmal klicken reicht),
+           Automatische IP-Sortierung beim Laden: Tabellenfenster, SQL-Ergebnis
+           und Ketten-Ergebnis (ziel_tv) erkennen IP-Spalten automatisch (mind.
+           50 % der ersten 20 Zeilen sind IPv4) und sortieren aufsteigend ohne
+           Benutzerinteraktion,
+           Überschneidungen-Fenster: Baumansicht (show="tree headings") mit
+           aufklappbaren Kindzeilen pro Gruppe — A-Einträge (rot) mit direkt
+           darunter eingerückten B-Partnern (↳ orange), neutrale Einträge grau,
+           IP-aufsteigend vorsortiert,
+           Überschneidungen-Fenster: DisplayName-Unterstützung — wenn die
+           IP-Tabelle ein Namensfeld enthält (PRAGMA table_info, Schlüsselwörter
+           display/name/bezeichn/label/titel/title), wird der Name neben der
+           IP angezeigt,
+           Überschneidungen-Fenster: Fensterposition und -größe werden pro
+           Kette gespeichert und beim nächsten Öffnen wiederhergestellt,
+           Ketten-Navigation: "In vorhergehende Tabelle hüpfen" — Doppelklick
+           oder Schaltfläche springt vom Ketten-Ergebnis zurück in das
+           Quelltabellen-Fenster und selektiert den passenden Datensatz
