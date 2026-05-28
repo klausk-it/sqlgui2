@@ -2675,15 +2675,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         g_tv.tag_configure("ue_pair", foreground="#995500")
         tree_spalten_breiten_anpassen(g_tv)
 
-        def _g_tv_header_menu(event):
-            m_h = tk.Menu(win2, tearoff=0)
-            _tv_spalten_menue_aufbauen(m_h, g_tv,
-                                       lambda: tree_spalten_breiten_anpassen(g_tv))
-            try:
-                m_h.tk_popup(event.x_root, event.y_root)
-            finally:
-                m_h.grab_release()
-        g_tv.bind("<Button-3>", _g_tv_header_menu)
+        standard_tv_rechtsklick_anbinden(g_tv, qt, win2)
 
         ttk.Separator(links_frame, orient="horizontal").grid(
             row=2, column=0, sticky="ew", pady=(2, 2))
@@ -2725,15 +2717,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                       command=d_tv.xview).grid(row=1, column=0, sticky="ew")
         d_tv.grid(row=0, column=0, sticky="nsew")
 
-        def _d_tv_header_menu(event):
-            m_dh = tk.Menu(win2, tearoff=0)
-            _tv_spalten_menue_aufbauen(m_dh, d_tv,
-                                       lambda: tree_spalten_breiten_anpassen(d_tv))
-            try:
-                m_dh.tk_popup(event.x_root, event.y_root)
-            finally:
-                m_dh.grab_release()
-        d_tv.bind("<Button-3>", _d_tv_header_menu)
+        standard_tv_rechtsklick_anbinden(d_tv, qt, win2)
 
         detail_lbl_var = tk.StringVar(value="")
         tk.Label(links_frame, textvariable=detail_lbl_var, anchor="w",
