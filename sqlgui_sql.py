@@ -2827,7 +2827,8 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         # ── Schrittweise: Auto-Resize win2 je nach TV-Inhalt ────────────────────
         def _schr_auto_breite():
-            """Misst längste Zeile im Schrittfenster und weitet win2 aus."""
+            """Misst längste Zeile im Schrittfenster und weitet win2 aus –
+            bei Platzmangel rechts wird das Fenster nach links verschoben."""
             try:
                 import tkinter.font as _tkf
                 _fnt = _tkf.Font(family="Consolas", size=10, weight="bold")
@@ -2847,9 +2848,18 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                 _lks_w = links_frame.winfo_width()
                 _needed = _lks_w + _max_w + 28    # Border + Scrollbar
                 if _needed > win2.winfo_width():
+                    _scr_w  = win2.winfo_screenwidth()
+                    _cur_x  = win2.winfo_x()
+                    _cur_y  = win2.winfo_y()
+                    _cur_h  = win2.winfo_height()
+                    # Passt das Fenster rechts noch auf den Bildschirm?
+                    if _cur_x + _needed > _scr_w:
+                        # Nach links verschieben, aber nicht über linken Rand
+                        _new_x = max(0, _scr_w - _needed)
+                    else:
+                        _new_x = _cur_x
                     win2.geometry(
-                        f"{_needed}x{win2.winfo_height()}"
-                        f"+{win2.winfo_x()}+{win2.winfo_y()}")
+                        f"{_needed}x{_cur_h}+{_new_x}+{_cur_y}")
             except Exception:
                 pass
 
@@ -2859,9 +2869,13 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                 _schr_tv2.column("#0", width=900, minwidth=300)
                 _bw = _win2_base_w[0]
                 if _bw > 0 and win2.winfo_width() > _bw:
+                    _scr_w = win2.winfo_screenwidth()
+                    _cur_x = win2.winfo_x()
+                    _cur_y = win2.winfo_y()
+                    # x-Position so korrigieren, dass Fenster auf Schirm bleibt
+                    _new_x = min(_cur_x, max(0, _scr_w - _bw))
                     win2.geometry(
-                        f"{_bw}x{win2.winfo_height()}"
-                        f"+{win2.winfo_x()}+{win2.winfo_y()}")
+                        f"{_bw}x{win2.winfo_height()}+{_new_x}+{_cur_y}")
             except Exception:
                 pass
 
