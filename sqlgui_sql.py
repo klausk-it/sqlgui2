@@ -2810,32 +2810,18 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                                    command=_schr_tv2.xview)
         _schr_tv2.configure(yscrollcommand=_schr_sy2.set,
                             xscrollcommand=_schr_sx2.set)
-        # Explizit weiß/schwarz — unabhängig vom Systemfarbmodus
-        try:
-            _schr_style = ttk.Style()
-            _schr_style.configure("SchrittTV.Treeview",
-                                  background="#FFFFFF",
-                                  fieldbackground="#FFFFFF",
-                                  foreground="#000000",
-                                  rowheight=20)
-            _schr_tv2.configure(style="SchrittTV.Treeview")
-        except Exception:
-            pass
         _schr_tv2.grid(row=1, column=0, sticky="nsew")
         _schr_sy2.grid(row=1, column=1, sticky="ns")
         _schr_sx2.grid(row=2, column=0, sticky="ew")
+        # Systemfarben bleiben — nur Schrift fett+groß für alle Farbmodi lesbar
         _schr_tv2.tag_configure("step_hdr",
-            font=("Segoe UI", 10, "bold"), foreground="#0000CC",
-            background="#E8EEFF")
+            font=("Segoe UI", 10, "bold"), foreground="#0000CC")
         _schr_tv2.tag_configure("col_hdr",
-            font=("Consolas", 9, "bold"), foreground="#000000",
-            background="#F0F0F0")
+            font=("Consolas", 10, "bold"), foreground="#444444")
         _schr_tv2.tag_configure("daten",
-            font=("Consolas", 9, "bold"), foreground="#000000",
-            background="#FFFFFF")
+            font=("Consolas", 10, "bold"))
         _schr_tv2.tag_configure("daten_ja",
-            font=("Consolas", 9, "bold"), foreground="#CC0000",
-            background="#FFF0F0")
+            font=("Consolas", 10, "bold"), foreground="#CC0000")
 
         # ── Schrittweise: Alle Ergebniszeilen laden (Vollabfrage) ─────────────
         # ── Schrittweise: Algorithmus-Schritte aufbauen ──────────────────────
