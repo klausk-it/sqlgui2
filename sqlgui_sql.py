@@ -2984,16 +2984,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _win2_menue.add_separator()
         _win2_menue.add_command(label="Schließen", command=win2.destroy)
 
-        btn_frm2 = tk.Frame(haupt)
-        btn_frm2.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(8, 0))
-        tk.Button(btn_frm2, text="In DB speichern",
-                  command=_analyse_in_db_speichern).pack(side="left", padx=(0, 6))
-        tk.Button(btn_frm2, text="Frühere Analysen...",
-                  command=_analyse_browsen).pack(side="left", padx=(0, 6))
-        tk.Button(btn_frm2, text="Alle Ergebnisse kopieren",
-                  command=_alle_kopieren).pack(side="left")
-        tk.Button(btn_frm2, text="Schließen", command=win2.destroy,
-                  width=12).pack(side="right")
+
     def ip_range_aufteilen_lokal():
         iid = _lok["item"]
         idx = _sp_idx()
