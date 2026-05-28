@@ -2814,13 +2814,13 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _schr_sy2.grid(row=1, column=1, sticky="ns")
         _schr_sx2.grid(row=2, column=0, sticky="ew")
         _schr_tv2.tag_configure("step_hdr",
-            font=("Segoe UI", 9, "bold"), foreground="#003388")
+            font=("Segoe UI", 10, "bold"), foreground="#003388")
         _schr_tv2.tag_configure("col_hdr",
-            font=("Courier New", 8), foreground="#555555")
+            font=("Courier New", 9, "bold"), foreground="#333333")
         _schr_tv2.tag_configure("daten",
-            font=("Courier New", 8), foreground="#111111")
+            font=("Courier New", 9), foreground="#000000")
         _schr_tv2.tag_configure("daten_ja",
-            font=("Courier New", 8, "bold"), foreground="#AA0000")
+            font=("Courier New", 9, "bold"), foreground="#AA0000")
 
         # ── Schrittweise: Alle Ergebniszeilen laden (Vollabfrage) ─────────────
         # ── Schrittweise: Algorithmus-Schritte aufbauen ──────────────────────
