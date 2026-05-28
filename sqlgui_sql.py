@@ -1157,7 +1157,7 @@ def _tv_spalten_auto_breite(tv, spalten_sichtbar, zeilen, pad_kopf=24, pad_daten
 
 def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                                       sql_text_hint=None, extra_menue_fn=None,
-                                      db_edit=True):
+                                      db_edit=True, nav_override_fn=None):
     """Bindet das vollständige 6-Block Rechtsklick-Menü an tv_widget.
 
     Gibt ein zeilen_ref-Dict zurück; der Caller befüllt zeilen_ref['alle']
@@ -2675,7 +2675,44 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         g_tv.tag_configure("ue_pair", foreground="#995500")
         tree_spalten_breiten_anpassen(g_tv)
 
-        standard_tv_rechtsklick_anbinden(g_tv, qt, win2)
+        # Navigation-Override für g_tv: gewählte Gruppe im Quell-Treeview markieren
+        _outer_tv_nav = tv_widget
+        def _nav_g_tv_zu_quellzeile(_otv=_outer_tv_nav, _win=win2, _qf_nav=qf):
+            sel = g_tv.selection()
+            if not sel:
+                messagebox.showwarning("Vorherige Tabelle",
+                    "Bitte zuerst eine Zeile auswählen.", parent=_win)
+                return
+            _iid = sel[0]
+            _par = g_tv.parent(_iid)
+            _gw_nav = g_tv.item(_iid if not _par else _par, "text")
+            _cols_nav = list(_otv["columns"])
+            _qi_nav = _cols_nav.index(_qf_nav) if _qf_nav in _cols_nav else -1
+            _found = False
+            for _riid in _otv.get_children():
+                _rvals = _otv.item(_riid, "values")
+                if _qi_nav >= 0 and _qi_nav < len(_rvals):
+                    _chk = str(_rvals[_qi_nav])
+                else:
+                    _chk = next((str(v) for v in _rvals
+                                 if str(v) == str(_gw_nav)), None)
+                if _chk == str(_gw_nav):
+                    _otv.selection_set(_riid)
+                    _otv.see(_riid)
+                    _found = True
+                    break
+            if _found:
+                try:
+                    _otv.winfo_toplevel().lift()
+                    _otv.winfo_toplevel().focus_force()
+                except Exception:
+                    pass
+            else:
+                messagebox.showinfo("Vorherige Tabelle",
+                    f"Gruppe '{_gw_nav}' nicht in der Quelltabelle gefunden.",
+                    parent=_win)
+        standard_tv_rechtsklick_anbinden(g_tv, qt, win2,
+                                         nav_override_fn=_nav_g_tv_zu_quellzeile)
 
         ttk.Separator(links_frame, orient="horizontal").grid(
             row=2, column=0, sticky="ew", pady=(2, 2))
@@ -3726,7 +3763,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         m.add_command(label="Definierte Beziehungen anzeigen",
                       command=definierte_beziehungen_anzeigen)
         m.add_command(label="In vorhergehender Tabelle zeigen",
-                      command=in_vorhergehender_tabelle_zeigen)
+                      command=nav_override_fn if nav_override_fn else in_vorhergehender_tabelle_zeigen)
         try:
             m.tk_popup(event.x_root, event.y_root)
         finally:
