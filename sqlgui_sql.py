@@ -2775,8 +2775,11 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _schr_btn_frm = tk.Frame(rechts_frame, padx=6)
         _schr_btn_frm.grid(row=1, column=0, sticky="ew", pady=(0, 4))
 
-        _schr_idx2 = [0]
-        _schr_gw2  = [None]
+        _schr_idx2  = [0]      # aktueller Zeilen-Index bei Einzelschritt
+        _schr_gw2   = [None]   # aktuell angezeigte GroupID
+        _schr_rows2 = [[]]     # gecachte Ergebniszeilen
+        _schr_cols2 = [[]]     # Spaltennamen des letzten Ergebnisses
+        _schr_mode2 = ['all']  # 'all' oder 'single'
 
         _btn_einzel_z = tk.Button(_schr_btn_frm, text="◄ Einzelschritt", width=14)
         _btn_einzel_z.pack(side="left", padx=(0, 4))
@@ -2809,72 +2812,17 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _schr_sy2.grid(row=1, column=1, sticky="ns")
         _schr_sx2.grid(row=2, column=0, sticky="ew")
 
-        def _schr2_schritt(gw_val, idx):
-            if not aktive_schritte or idx < 0 or idx >= len(aktive_schritte):
-                return
-            _schr_idx2[0] = idx
-            schritt = aktive_schritte[idx]
-            _btn_einzel_z.config(state="normal" if idx > 0 else "disabled")
-            _btn_einzel_w.config(
-                state="normal" if idx < len(aktive_schritte)-1 else "disabled")
-            _schr_lbl2.config(
-                text=f"Schritt {idx+1}/{len(aktive_schritte)}: "
-                     f"{schritt.get('zu_tab','?')}")
-            if not gw_val:
+        # ── Schrittweise: Alle Ergebniszeilen laden (Vollabfrage) ─────────────
+        def _schr2_laden(gw_val):
+            """Führt die vollständige Kettenabfrage für gw_val aus und zeigt ALLE Zeilen."""
+            _schr_gw2[0] = gw_val
+            _schr_mode2[0] = "all"
+            if not aktive_schritte or not gw_val:
                 _schr_tv2.delete(*_schr_tv2.get_children())
                 _schr_status2.config(text="← Gruppe auswählen")
-                return
-            try:
-                _vb_sc = sqlite_verbindung_oeffnen()
-                _als_sc = [f"_sc{i}" for i in range(len(aktive_schritte) + 1)]
-                _joins_sc = " ".join(
-                    f"LEFT JOIN {sql_identifier(s['zu_tab'])} {_als_sc[i+1]} "
-                    f"ON {_als_sc[i+1]}.{sql_identifier(s['zu_feld'])} "
-                    f"= {_als_sc[i]}.{sql_identifier(s['von_feld'])}"
-                    for i, s in enumerate(aktive_schritte[:idx+1])
-                )
-                _felder_sc = list(schritt.get("felder", [])) or [
-                    r[1] for r in _vb_sc.execute(
-                        f"PRAGMA table_info({sql_identifier(schritt.get('zu_tab',''))})"
-                    ).fetchall()
-                ]
-                if _felder_sc:
-                    _sel_sc = ", ".join(
-                        f"{_als_sc[idx+1]}.{sql_identifier(f)}"
-                        for f in _felder_sc)
-                else:
-                    _sel_sc = f"{_als_sc[idx+1]}.*"
-                    _felder_sc = [r[1] for r in _vb_sc.execute(
-                        f"PRAGMA table_info({sql_identifier(schritt.get('zu_tab',''))})"
-                    ).fetchall()]
-                _sql_sc = (
-                    f"SELECT {_sel_sc} FROM {sql_identifier(qt)} {_als_sc[0]} "
-                    f"{_joins_sc} WHERE {_als_sc[0]}.{sql_identifier(qf)}=?")
-                _cur_sc = _vb_sc.cursor()
-                _cur_sc.execute(_sql_sc, (gw_val,))
-                _zeilen_sc = _cur_sc.fetchall()
-                _vb_sc.close()
-            except Exception as _e_sc:
-                messagebox.showwarning("Schrittweise",
-                    f"Fehler:\n{_e_sc}", parent=win2)
-                return
-            if list(_schr_tv2["columns"]) != _felder_sc:
-                _schr_tv2.configure(columns=_felder_sc)
-                for _sp_sc in _felder_sc:
-                    _schr_tv2.heading(_sp_sc, text=_sp_sc, anchor="w")
-                    _schr_tv2.column(_sp_sc, width=80, anchor="w",
-                                     minwidth=40, stretch=False)
-            _schr_tv2.delete(*_schr_tv2.get_children())
-            for _z_sc in _zeilen_sc:
-                _schr_tv2.insert("", "end",
-                    values=[str(v) if v is not None else "" for v in _z_sc])
-            _tv_spalten_auto_breite(_schr_tv2, _felder_sc, _zeilen_sc)
-            _schr_status2.config(
-                text=f"Tab: {schritt.get('zu_tab','?')}  ·  "
-                     f"{len(_zeilen_sc)} Einträge  (Gruppe: {gw_val})")
-
-        def _schr2_alle(gw_val):
-            if not aktive_schritte or not gw_val:
+                _schr_lbl2.config(text="—")
+                _btn_einzel_z.config(state="disabled")
+                _btn_einzel_w.config(state="disabled")
                 return
             try:
                 _vb_sa = sqlite_verbindung_oeffnen()
@@ -2919,6 +2867,10 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                 messagebox.showwarning("Alle ausführen",
                     f"Fehler:\n{_e_sa}", parent=win2)
                 return
+            _schr_rows2[0] = _zeilen_sa
+            _schr_cols2[0] = _sp_a
+            _schr_idx2[0]  = 0
+            # Treeview befüllen
             if list(_schr_tv2["columns"]) != _sp_a:
                 _schr_tv2.configure(columns=_sp_a)
                 for _sp_s in _sp_a:
@@ -2930,19 +2882,53 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                 _schr_tv2.insert("", "end",
                     values=[str(v) if v is not None else "" for v in _z_sa])
             _tv_spalten_auto_breite(_schr_tv2, _sp_a, _zeilen_sa)
+            n = len(_zeilen_sa)
+            _schr_lbl2.config(text=f"Alle {n} Einträge")
             _schr_status2.config(
-                text=f"Alle {len(aktive_schritte)} Schritte  ·  "
-                     f"{len(_zeilen_sa)} Einträge  (Gruppe: {gw_val})")
-            _schr_lbl2.config(
-                text=f"Alle {len(aktive_schritte)} Schritte")
+                text=f"Alle {n} Einträge  (Gruppe: {gw_val})")
             _btn_einzel_z.config(state="disabled")
-            _btn_einzel_w.config(state="disabled")
+            _btn_einzel_w.config(
+                state="normal" if n > 0 else "disabled")
 
-        _btn_einzel_z.config(command=lambda: _schr2_schritt(
-            _schr_gw2[0], _schr_idx2[0] - 1))
-        _btn_einzel_w.config(command=lambda: _schr2_schritt(
-            _schr_gw2[0], _schr_idx2[0] + 1))
-        _btn_alle2.config(command=lambda: _schr2_alle(_schr_gw2[0]))
+        # ── Schrittweise: Einzelschritt vorwärts / rückwärts ──────────────────
+        def _schr2_einzelschritt(richtung):
+            """Zeigt eine einzelne Ergebniszeile; richtung=+1 vor, -1 zurück."""
+            rows = _schr_rows2[0]
+            cols = _schr_cols2[0]
+            if not rows:
+                return
+            if _schr_mode2[0] == "all":
+                # Vom Alle-Modus in Einzelschritt: beim ersten (oder letzten) Eintrag starten
+                new_idx = 0 if richtung > 0 else len(rows) - 1
+            else:
+                new_idx = _schr_idx2[0] + richtung
+            new_idx = max(0, min(new_idx, len(rows) - 1))
+            _schr_idx2[0]  = new_idx
+            _schr_mode2[0] = "single"
+            zeile = rows[new_idx]
+            if list(_schr_tv2["columns"]) != cols:
+                _schr_tv2.configure(columns=cols)
+                for _sp_s in cols:
+                    _schr_tv2.heading(_sp_s, text=_sp_s, anchor="w")
+                    _schr_tv2.column(_sp_s, width=80, anchor="w",
+                                     minwidth=40, stretch=False)
+            _schr_tv2.delete(*_schr_tv2.get_children())
+            _schr_tv2.insert("", "end",
+                values=[str(v) if v is not None else "" for v in zeile])
+            _tv_spalten_auto_breite(_schr_tv2, cols, [zeile])
+            n = len(rows)
+            _schr_lbl2.config(
+                text=f"Schritt {new_idx+1}/{n}")
+            _schr_status2.config(
+                text=f"Schritt {new_idx+1}/{n}  (Gruppe: {_schr_gw2[0]})")
+            _btn_einzel_z.config(
+                state="normal" if new_idx > 0 else "disabled")
+            _btn_einzel_w.config(
+                state="normal" if new_idx < n - 1 else "disabled")
+
+        _btn_einzel_z.config(command=lambda: _schr2_einzelschritt(-1))
+        _btn_einzel_w.config(command=lambda: _schr2_einzelschritt(+1))
+        _btn_alle2.config(command=lambda: _schr2_laden(_schr_gw2[0]))
 
         # Gruppen-Selektion aktualisiert Details + Schrittfenster
         def _details_zeigen(event=None):
@@ -2962,7 +2948,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                 else f"Gruppe: {gw}  ·  Keine Überschneidungen")
             _schr_gw2[0] = gw
             if aktive_schritte:
-                _schr2_schritt(gw, _schr_idx2[0])
+                _schr2_laden(gw)
 
         g_tv.bind("<<TreeviewSelect>>", _details_zeigen)
 
