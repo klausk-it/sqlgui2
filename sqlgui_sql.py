@@ -3976,8 +3976,9 @@ def _workflow_ketten_fenster_oeffnen(rel_id_str, projektname):
     quell_titel = f"Quelltabelle: {qt}"
     if quell_felder:
         quell_titel += f"  [{', '.join(quell_felder)}]"
-    tk.Label(haupt, text=quell_titel, anchor="w",
-             font=("Segoe UI", 9, "bold")).grid(row=0, column=0, sticky="w", pady=(0, 2))
+    _quell_lbl = tk.Label(haupt, text=quell_titel, anchor="w",
+             font=("Segoe UI", 9, "bold"))
+    _quell_lbl.grid(row=0, column=0, sticky="w", pady=(0, 2))
 
     quell_frame = tk.Frame(haupt)
     quell_frame.grid(row=1, column=0, sticky="nsew")
@@ -4009,6 +4010,8 @@ def _workflow_ketten_fenster_oeffnen(rel_id_str, projektname):
         cursor_q.execute(quell_sql)
         quell_zeilen = cursor_q.fetchall()
         vb2.close()
+        _quell_lbl.config(
+            text=quell_titel + f"  ·  {len(quell_zeilen)} Datensätze")
     except Exception as e:
         quell_zeilen = []
         quell_spalten = []
