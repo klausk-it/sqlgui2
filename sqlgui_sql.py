@@ -2519,18 +2519,46 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             + ([f"{aktive_schritte[-1]['zu_tab']}.{ip_feld}"] if aktive_schritte else [])
         )
 
+        # Gruppenname aus Quelltabelle auto-erkennen
+        _gw_zu_name    = {}
+        _grp_name_feld = None
+        _prio_kw_grp   = ("name", "bezeichn", "label", "titel", "title", "display")
+        try:
+            _vb_gn = sqlite_verbindung_oeffnen()
+            _pr_qt = _vb_gn.execute(
+                f"PRAGMA table_info({sql_identifier(qt)})"
+            ).fetchall()
+            for _pr_q in _pr_qt:
+                _pf_q = _pr_q[1]
+                if _pf_q.lower() == qf.lower():
+                    continue
+                if any(_kw in _pf_q.lower() for _kw in _prio_kw_grp):
+                    _grp_name_feld = _pf_q
+                    break
+            if _grp_name_feld:
+                for _gnr in _vb_gn.execute(
+                    f"SELECT DISTINCT {sql_identifier(qf)}, "
+                    f"{sql_identifier(_grp_name_feld)} FROM {sql_identifier(qt)}"
+                ).fetchall():
+                    if _gnr[0] is not None:
+                        _gw_zu_name[str(_gnr[0])] = (
+                            str(_gnr[1]) if _gnr[1] is not None else "")
+            _vb_gn.close()
+        except Exception:
+            pass
+
         win2 = tk.Toplevel(parent_win)
         win2.title(
             f"{G_EXE_Title} – Überschneidungen in Kette: "
             f"{bez_titel}  [{qf}] → [{ip_feld}]")
-        win2.geometry("1100x680")
-        win2.minsize(700, 440)
+        win2.geometry("1560x720")
+        win2.minsize(900, 480)
         fenster_registrieren(win2, "Überschneidungen Kette", win2.title())
-        fenster_standard_menue_anbringen(win2, "1100x680", "Überschneidungen Kette")
+        _win2_menue = fenster_standard_menue_anbringen(
+            win2, "1560x720", "Überschneidungen Kette")
         win2.title(
             f"{G_EXE_Title} – Überschneidungen in Kette: "
             f"{bez_titel}  [{qf}] → [{ip_feld}]")
-        # Letzte Position wiederherstellen
         _ue_pos_key = f"ue_pos_{rel_id_str}"
         _ue_pos = _sql_konfig_lesen(_ue_pos_key)
         if _ue_pos:
@@ -2544,15 +2572,17 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                 pass
         win2.bind("<Configure>", _ue_pos_speichern)
 
+        # 2-Spalten-Layout: links Gruppen+Details, rechts Schrittfenster
         haupt = tk.Frame(win2, padx=8, pady=8)
         haupt.pack(fill="both", expand=True)
         haupt.columnconfigure(0, weight=1)
-        haupt.rowconfigure(2, weight=2)   # Gruppen-Treeview
-        haupt.rowconfigure(4, weight=3)   # Detail-Treeview
+        haupt.columnconfigure(1, weight=1)
+        haupt.rowconfigure(2, weight=1)
 
-        # Info + Status
+        # Info + Status (beide Spalten)
         tk.Label(haupt, text=f"Kette: {ketten_pfad}", anchor="w",
-                 fg="#444444").grid(row=0, column=0, sticky="ew", pady=(0, 2))
+                 fg="#444444").grid(row=0, column=0, columnspan=2,
+                                    sticky="ew", pady=(0, 2))
         farbe = "#007700" if gesamt_ue == 0 else "#CC0000"
         sym   = "✓" if gesamt_ue == 0 else "⚠"
         stat  = (f"{sym}  Keine Überschneidungen in {n_gruppen} Gruppe(n)."
@@ -2560,25 +2590,40 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                  f"{sym}  {gesamt_ue} Überschneidung(en) in {n_mit_ue} von {n_gruppen} Gruppe(n)  "
                  f"·  {n_gesamt_ip} IP-Einträge gesamt")
         tk.Label(haupt, text=stat, anchor="w", fg=farbe,
-                 font=("TkDefaultFont", 10, "bold")).grid(row=1, column=0, sticky="ew", pady=(0, 4))
+                 font=("TkDefaultFont", 10, "bold")).grid(
+                     row=1, column=0, columnspan=2, sticky="ew", pady=(0, 4))
 
-        # ── Oberes Panel: Gruppen-Übersicht ───────────────────────────────────
-        frm_oben = tk.Frame(haupt)
-        frm_oben.grid(row=2, column=0, sticky="nsew", pady=(0, 6))
+        # ── Linke Seite: Gruppen (oben) + Details (unten) ─────────────────────
+        links_frame = tk.Frame(haupt)
+        links_frame.grid(row=2, column=0, sticky="nsew", padx=(0, 6))
+        links_frame.columnconfigure(0, weight=1)
+        links_frame.rowconfigure(1, weight=2)
+        links_frame.rowconfigure(4, weight=3)
+
+        tk.Label(links_frame, text=f"Gruppen  ({qf})",
+                 anchor="w", font=("Segoe UI", 9, "bold")).grid(
+                     row=0, column=0, sticky="ew", pady=(0, 2))
+
+        frm_oben = tk.Frame(links_frame)
+        frm_oben.grid(row=1, column=0, sticky="nsew", pady=(0, 4))
         frm_oben.rowconfigure(0, weight=1)
         frm_oben.columnconfigure(0, weight=1)
 
-        g_cols = ("n_ips", "n_ue")
+        _hat_grp_name = bool(_gw_zu_name)
+        g_cols = ("gruppenname", "n_ips", "n_ue") if _hat_grp_name else ("n_ips", "n_ue")
         g_tv = ttk.Treeview(frm_oben, columns=g_cols, show="tree headings",
                              selectmode="browse")
-        g_tv.heading("#0",    text=f"Gruppe  ({qf})",  anchor="w")
-        g_tv.heading("n_ips", text="IP-Einträge",       anchor="w",
+        g_tv.heading("#0", text=qf, anchor="w")
+        if _hat_grp_name:
+            g_tv.heading("gruppenname", text=_grp_name_feld or "Gruppenname", anchor="w")
+            g_tv.column("gruppenname", anchor="w", width=180, stretch=True, minwidth=60)
+        g_tv.heading("n_ips", text="IP-Einträge", anchor="w",
                      command=lambda: _tv_sortieren(g_tv, "n_ips"))
-        g_tv.heading("n_ue",  text="Überschneidungen",  anchor="w",
+        g_tv.heading("n_ue",  text="Überschneidungen", anchor="w",
                      command=lambda: _tv_sortieren(g_tv, "n_ue"))
-        g_tv.column("#0",     anchor="w", width=260, stretch=True,  minwidth=100)
-        g_tv.column("n_ips",  anchor="w", width=90,  stretch=False)
-        g_tv.column("n_ue",   anchor="w", width=110, stretch=False)
+        g_tv.column("#0",    anchor="w", width=160, stretch=True, minwidth=60)
+        g_tv.column("n_ips", anchor="w", width=80,  stretch=False)
+        g_tv.column("n_ue",  anchor="w", width=110, stretch=False)
         ttk.Scrollbar(frm_oben, orient="vertical",
                       command=g_tv.yview).grid(row=0, column=1, sticky="ns")
         ttk.Scrollbar(frm_oben, orient="horizontal",
@@ -2590,12 +2635,11 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _kind_zu_eltern = {}
         for gw, n_ip, n_ue, det in gruppen_info:
             _tags = ("ue",) if n_ue > 0 else ()
-            # Gruppennamen im #0-Feld → immer sichtbar
-            iid2 = g_tv.insert("", "end", text=str(gw),
-                                values=(n_ip, n_ue), tags=_tags)
+            _gname = _gw_zu_name.get(str(gw), "")
+            _vals  = (_gname, n_ip, n_ue) if _hat_grp_name else (n_ip, n_ue)
+            iid2 = g_tv.insert("", "end", text=str(gw), values=_vals, tags=_tags)
             iid_zu_details[iid2] = det
             iid_zu_gw[iid2] = gw
-            # A/B-Sets für diese Gruppe
             _a_zns_set  = set()
             _b_zns_set  = set()
             _a_zu_b_lst = {}
@@ -2615,14 +2659,15 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                 _tag_k = ("ue",) if _zn_k in _a_zns_set else ("detail",)
                 _disp_k = _zn_zu_disp.get(_zn_k, "")
                 _lbl_k  = (_disp_k + "  " + _iw_k) if _disp_k else _iw_k
+                _cv     = ("", "", "") if _hat_grp_name else ("", "")
                 _kiid = g_tv.insert(iid2, "end", text=_lbl_k,
-                                    values=("", ""), tags=_tag_k)
+                                    values=_cv, tags=_tag_k)
                 _kind_zu_eltern[_kiid] = iid2
                 for _r2_b, _d2_b, _ol_s_b, _ol_e_b in _a_zu_b_lst.get(_zn_k, []):
                     _disp_b = _zn_zu_disp.get(_r2_b, "")
                     _lbl_b  = "↳ " + ((_disp_b + "  " + _d2_b) if _disp_b else _d2_b)
                     _bkiid = g_tv.insert(iid2, "end", text=_lbl_b,
-                                         values=("", ""), tags=("ue_pair",))
+                                         values=_cv, tags=("ue_pair",))
                     _kind_zu_eltern[_bkiid] = iid2
         g_tv.tag_configure("ue",      foreground="#CC0000")
         g_tv.tag_configure("detail",  foreground="#777777")
@@ -2639,24 +2684,33 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                 m_h.grab_release()
         g_tv.bind("<Button-3>", _g_tv_header_menu)
 
-        # ── Unteres Panel: Details zur gewählten Gruppe ───────────────────────
-        tk.Label(haupt, text="Details zur gewählten Gruppe:",
-                 anchor="w").grid(row=3, column=0, sticky="ew", pady=(2, 2))
+        ttk.Separator(links_frame, orient="horizontal").grid(
+            row=2, column=0, sticky="ew", pady=(2, 2))
+        tk.Label(links_frame, text="Details zur gewählten Gruppe:",
+                 anchor="w").grid(row=3, column=0, sticky="ew", pady=(0, 2))
 
-        frm_unten = tk.Frame(haupt)
+        frm_unten = tk.Frame(links_frame)
         frm_unten.grid(row=4, column=0, sticky="nsew")
         frm_unten.rowconfigure(0, weight=1)
         frm_unten.columnconfigure(0, weight=1)
 
         d_cols = ("z_a", "eintrag_a", "z_b", "eintrag_b", "ol_start", "ol_end", "anz")
-        d_tv = ttk.Treeview(frm_unten, columns=d_cols, show="headings", selectmode="browse")
-        d_tv.heading("z_a",       text="Zeile A",         anchor="w", command=lambda: _tv_sortieren(d_tv, "z_a"))
-        d_tv.heading("eintrag_a", text="Eintrag A",        anchor="w", command=lambda: _tv_sortieren(d_tv, "eintrag_a"))
-        d_tv.heading("z_b",       text="Zeile B",          anchor="w", command=lambda: _tv_sortieren(d_tv, "z_b"))
-        d_tv.heading("eintrag_b", text="Eintrag B",        anchor="w", command=lambda: _tv_sortieren(d_tv, "eintrag_b"))
-        d_tv.heading("ol_start",  text="Überschn. Start", anchor="w", command=lambda: _tv_sortieren(d_tv, "ol_start"))
-        d_tv.heading("ol_end",    text="Überschn. Ende",  anchor="w", command=lambda: _tv_sortieren(d_tv, "ol_end"))
-        d_tv.heading("anz",       text="Anzahl IPs",       anchor="w", command=lambda: _tv_sortieren(d_tv, "anz"))
+        d_tv = ttk.Treeview(frm_unten, columns=d_cols, show="headings",
+                             selectmode="browse")
+        d_tv.heading("z_a",       text="Zeile A",         anchor="w",
+                     command=lambda: _tv_sortieren(d_tv, "z_a"))
+        d_tv.heading("eintrag_a", text="Eintrag A",        anchor="w",
+                     command=lambda: _tv_sortieren(d_tv, "eintrag_a"))
+        d_tv.heading("z_b",       text="Zeile B",          anchor="w",
+                     command=lambda: _tv_sortieren(d_tv, "z_b"))
+        d_tv.heading("eintrag_b", text="Eintrag B",        anchor="w",
+                     command=lambda: _tv_sortieren(d_tv, "eintrag_b"))
+        d_tv.heading("ol_start",  text="Überschn. Start", anchor="w",
+                     command=lambda: _tv_sortieren(d_tv, "ol_start"))
+        d_tv.heading("ol_end",    text="Überschn. Ende",  anchor="w",
+                     command=lambda: _tv_sortieren(d_tv, "ol_end"))
+        d_tv.heading("anz",       text="Anzahl IPs",       anchor="w",
+                     command=lambda: _tv_sortieren(d_tv, "anz"))
         d_tv.column("z_a",        width=55,  anchor="w", stretch=False)
         d_tv.column("eintrag_a",  width=160, anchor="w", stretch=False)
         d_tv.column("z_b",        width=55,  anchor="w", stretch=False)
@@ -2681,9 +2735,192 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         d_tv.bind("<Button-3>", _d_tv_header_menu)
 
         detail_lbl_var = tk.StringVar(value="")
-        tk.Label(haupt, textvariable=detail_lbl_var, anchor="w",
+        tk.Label(links_frame, textvariable=detail_lbl_var, anchor="w",
                  fg="#555555").grid(row=5, column=0, sticky="ew", pady=(2, 0))
 
+        # ── Rechte Seite: Schrittfenster ──────────────────────────────────────
+        rechts_frame = tk.Frame(haupt, relief="groove", bd=1)
+        rechts_frame.grid(row=2, column=1, sticky="nsew")
+        rechts_frame.columnconfigure(0, weight=1)
+        rechts_frame.rowconfigure(2, weight=1)
+
+        tk.Label(rechts_frame, text="Schrittweise Ausführen",
+                 anchor="w", font=("Segoe UI", 9, "bold"),
+                 padx=6, pady=4).grid(row=0, column=0, sticky="ew")
+
+        _schr_btn_frm = tk.Frame(rechts_frame, padx=6)
+        _schr_btn_frm.grid(row=1, column=0, sticky="ew", pady=(0, 4))
+
+        _schr_idx2 = [0]
+        _schr_gw2  = [None]
+
+        _btn_einzel_z = tk.Button(_schr_btn_frm, text="◄ Einzelschritt", width=14)
+        _btn_einzel_z.pack(side="left", padx=(0, 4))
+        _schr_lbl2 = tk.Label(_schr_btn_frm, text="—", anchor="center",
+                               font=("Segoe UI", 9, "bold"))
+        _schr_lbl2.pack(side="left", expand=True, fill="x", padx=4)
+        _btn_einzel_w = tk.Button(_schr_btn_frm, text="Einzelschritt ►", width=14)
+        _btn_einzel_w.pack(side="left", padx=(4, 8))
+        _btn_alle2 = tk.Button(_schr_btn_frm, text="Alle ausführen", width=14)
+        _btn_alle2.pack(side="left")
+
+        _schr_tv_frm = tk.Frame(rechts_frame, padx=6)
+        _schr_tv_frm.grid(row=2, column=0, sticky="nsew")
+        _schr_tv_frm.columnconfigure(0, weight=1)
+        _schr_tv_frm.rowconfigure(1, weight=1)
+
+        _schr_status2 = tk.Label(_schr_tv_frm,
+            text="← Gruppe auswählen", anchor="w", fg="#555555")
+        _schr_status2.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 2))
+
+        _schr_tv2 = ttk.Treeview(_schr_tv_frm, columns=(), show="headings",
+                                  selectmode="browse")
+        _schr_sy2 = ttk.Scrollbar(_schr_tv_frm, orient="vertical",
+                                   command=_schr_tv2.yview)
+        _schr_sx2 = ttk.Scrollbar(_schr_tv_frm, orient="horizontal",
+                                   command=_schr_tv2.xview)
+        _schr_tv2.configure(yscrollcommand=_schr_sy2.set,
+                            xscrollcommand=_schr_sx2.set)
+        _schr_tv2.grid(row=1, column=0, sticky="nsew")
+        _schr_sy2.grid(row=1, column=1, sticky="ns")
+        _schr_sx2.grid(row=2, column=0, sticky="ew")
+
+        def _schr2_schritt(gw_val, idx):
+            if not aktive_schritte or idx < 0 or idx >= len(aktive_schritte):
+                return
+            _schr_idx2[0] = idx
+            schritt = aktive_schritte[idx]
+            _btn_einzel_z.config(state="normal" if idx > 0 else "disabled")
+            _btn_einzel_w.config(
+                state="normal" if idx < len(aktive_schritte)-1 else "disabled")
+            _schr_lbl2.config(
+                text=f"Schritt {idx+1}/{len(aktive_schritte)}: "
+                     f"{schritt.get('zu_tab','?')}")
+            if not gw_val:
+                _schr_tv2.delete(*_schr_tv2.get_children())
+                _schr_status2.config(text="← Gruppe auswählen")
+                return
+            try:
+                _vb_sc = sqlite_verbindung_oeffnen()
+                _als_sc = [f"_sc{i}" for i in range(len(aktive_schritte) + 1)]
+                _joins_sc = " ".join(
+                    f"LEFT JOIN {sql_identifier(s['zu_tab'])} {_als_sc[i+1]} "
+                    f"ON {_als_sc[i+1]}.{sql_identifier(s['zu_feld'])} "
+                    f"= {_als_sc[i]}.{sql_identifier(s['von_feld'])}"
+                    for i, s in enumerate(aktive_schritte[:idx+1])
+                )
+                _felder_sc = list(schritt.get("felder", [])) or [
+                    r[1] for r in _vb_sc.execute(
+                        f"PRAGMA table_info({sql_identifier(schritt.get('zu_tab',''))})"
+                    ).fetchall()
+                ]
+                if _felder_sc:
+                    _sel_sc = ", ".join(
+                        f"{_als_sc[idx+1]}.{sql_identifier(f)}"
+                        for f in _felder_sc)
+                else:
+                    _sel_sc = f"{_als_sc[idx+1]}.*"
+                    _felder_sc = [r[1] for r in _vb_sc.execute(
+                        f"PRAGMA table_info({sql_identifier(schritt.get('zu_tab',''))})"
+                    ).fetchall()]
+                _sql_sc = (
+                    f"SELECT {_sel_sc} FROM {sql_identifier(qt)} {_als_sc[0]} "
+                    f"{_joins_sc} WHERE {_als_sc[0]}.{sql_identifier(qf)}=?")
+                _cur_sc = _vb_sc.cursor()
+                _cur_sc.execute(_sql_sc, (gw_val,))
+                _zeilen_sc = _cur_sc.fetchall()
+                _vb_sc.close()
+            except Exception as _e_sc:
+                messagebox.showwarning("Schrittweise",
+                    f"Fehler:\n{_e_sc}", parent=win2)
+                return
+            if list(_schr_tv2["columns"]) != _felder_sc:
+                _schr_tv2.configure(columns=_felder_sc)
+                for _sp_sc in _felder_sc:
+                    _schr_tv2.heading(_sp_sc, text=_sp_sc, anchor="w")
+                    _schr_tv2.column(_sp_sc, width=80, anchor="w",
+                                     minwidth=40, stretch=False)
+            _schr_tv2.delete(*_schr_tv2.get_children())
+            for _z_sc in _zeilen_sc:
+                _schr_tv2.insert("", "end",
+                    values=[str(v) if v is not None else "" for v in _z_sc])
+            _tv_spalten_auto_breite(_schr_tv2, _felder_sc, _zeilen_sc)
+            _schr_status2.config(
+                text=f"Tab: {schritt.get('zu_tab','?')}  ·  "
+                     f"{len(_zeilen_sc)} Einträge  (Gruppe: {gw_val})")
+
+        def _schr2_alle(gw_val):
+            if not aktive_schritte or not gw_val:
+                return
+            try:
+                _vb_sa = sqlite_verbindung_oeffnen()
+                _als_sa = [f"_sa{i}" for i in range(len(aktive_schritte) + 1)]
+                from collections import Counter as _Ctr
+                _felder_alle = []
+                for _i_a, _s_a in enumerate(aktive_schritte):
+                    _ff = list(_s_a.get("felder", [])) or [
+                        r[1] for r in _vb_sa.execute(
+                            f"PRAGMA table_info("
+                            f"{sql_identifier(_s_a.get('zu_tab',''))})"
+                        ).fetchall()
+                    ]
+                    _felder_alle.append(
+                        (_i_a, _s_a.get("zu_tab","?"), _als_sa[_i_a+1], _ff))
+                _zaehler = _Ctr(
+                    f for (_, _, _, fl) in _felder_alle for f in fl)
+                _sel_p = []
+                _sp_a  = []
+                for (_i_a, _t_a, _al_a, _ff_a) in _felder_alle:
+                    for _f_a in _ff_a:
+                        _ca = f"{_t_a}.{_f_a}" if _zaehler[_f_a] > 1 else _f_a
+                        _sel_p.append(
+                            f"{_al_a}.{sql_identifier(_f_a)} "
+                            f"AS {sql_identifier(_ca)}")
+                        _sp_a.append(_ca)
+                _joins_sa = " ".join(
+                    f"LEFT JOIN {sql_identifier(s['zu_tab'])} {_als_sa[i+1]} "
+                    f"ON {_als_sa[i+1]}.{sql_identifier(s['zu_feld'])} "
+                    f"= {_als_sa[i]}.{sql_identifier(s['von_feld'])}"
+                    for i, s in enumerate(aktive_schritte)
+                )
+                _sql_sa = (
+                    f"SELECT {', '.join(_sel_p)} "
+                    f"FROM {sql_identifier(qt)} {_als_sa[0]} "
+                    f"{_joins_sa} WHERE {_als_sa[0]}.{sql_identifier(qf)}=?")
+                _cur_sa = _vb_sa.cursor()
+                _cur_sa.execute(_sql_sa, (gw_val,))
+                _zeilen_sa = _cur_sa.fetchall()
+                _vb_sa.close()
+            except Exception as _e_sa:
+                messagebox.showwarning("Alle ausführen",
+                    f"Fehler:\n{_e_sa}", parent=win2)
+                return
+            if list(_schr_tv2["columns"]) != _sp_a:
+                _schr_tv2.configure(columns=_sp_a)
+                for _sp_s in _sp_a:
+                    _schr_tv2.heading(_sp_s, text=_sp_s, anchor="w")
+                    _schr_tv2.column(_sp_s, width=80, anchor="w",
+                                     minwidth=40, stretch=False)
+            _schr_tv2.delete(*_schr_tv2.get_children())
+            for _z_sa in _zeilen_sa:
+                _schr_tv2.insert("", "end",
+                    values=[str(v) if v is not None else "" for v in _z_sa])
+            _tv_spalten_auto_breite(_schr_tv2, _sp_a, _zeilen_sa)
+            _schr_status2.config(
+                text=f"Alle {len(aktive_schritte)} Schritte  ·  "
+                     f"{len(_zeilen_sa)} Einträge  (Gruppe: {gw_val})")
+            _schr_lbl2.config(
+                text=f"Alle {len(aktive_schritte)} Schritte")
+            _btn_einzel_z.config(state="disabled")
+            _btn_einzel_w.config(state="disabled")
+
+        _btn_einzel_z.config(command=lambda: _schr2_schritt(
+            _schr_gw2[0], _schr_idx2[0] - 1))
+        _btn_einzel_w.config(command=lambda: _schr2_schritt(
+            _schr_gw2[0], _schr_idx2[0] + 1))
+        _btn_alle2.config(command=lambda: _schr2_alle(_schr_gw2[0]))
+
+        # Gruppen-Selektion aktualisiert Details + Schrittfenster
         def _details_zeigen(event=None):
             sel = g_tv.selection()
             if not sel:
@@ -2699,10 +2936,12 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             detail_lbl_var.set(
                 f"Gruppe: {gw}  ·  {len(det)} Überschneidung(en)" if det
                 else f"Gruppe: {gw}  ·  Keine Überschneidungen")
+            _schr_gw2[0] = gw
+            if aktive_schritte:
+                _schr2_schritt(gw, _schr_idx2[0])
 
         g_tv.bind("<<TreeviewSelect>>", _details_zeigen)
 
-        # Erste Gruppe mit Überschneidungen vorab auswählen
         for iid2 in g_tv.get_children():
             if iid_zu_details.get(iid2):
                 g_tv.selection_set(iid2)
@@ -2715,25 +2954,37 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                 g_tv.selection_set(kinder[0])
                 _details_zeigen()
 
-        # ── Button-Leiste ─────────────────────────────────────────────────────
-        btn_frm2 = tk.Frame(haupt)
-        btn_frm2.grid(row=6, column=0, sticky="ew", pady=(8, 0))
-
+        # Aktionen
         def _alle_kopieren():
             zeilen = [f"Gruppe ({qf})\tIP-Einträge\tÜberschneidungen"]
             for gw, n_ip, n_ue, _ in gruppen_info:
                 zeilen.append(f"{gw}\t{n_ip}\t{n_ue}")
             zeilen.append("")
             zeilen.append("Zeile A\tEintrag A\tZeile B\tEintrag B\t"
-                          "Überschn. Start\tÜberschn. Ende\tAnzahl IPs\tGruppe")
+                          "Überschn. Start\tÜberschn. Ende\t"
+                          "Anzahl IPs\tGruppe")
             for gw, _, _, det in gruppen_info:
                 for r1, d1, r2, d2, ol_s, ol_e, cnt in det:
-                    zeilen.append(f"{r1}\t{d1}\t{r2}\t{d2}\t{ol_s}\t{ol_e}\t{cnt}\t{gw}")
+                    zeilen.append(
+                        f"{r1}\t{d1}\t{r2}\t{d2}\t{ol_s}\t{ol_e}\t{cnt}\t{gw}")
             win2.clipboard_clear()
             win2.clipboard_append("\n".join(zeilen))
             messagebox.showinfo("Kopiert",
-                f"Übersicht + {gesamt_ue} Detailzeile(n) kopiert.", parent=win2)
+                f"Übersicht + {gesamt_ue} Detailzeile(n) kopiert.",
+                parent=win2)
 
+        _win2_menue.add_separator()
+        _win2_menue.add_command(label="In DB speichern",
+                                command=_analyse_in_db_speichern)
+        _win2_menue.add_command(label="Frühere Analysen...",
+                                command=_analyse_browsen)
+        _win2_menue.add_command(label="Alle Ergebnisse kopieren",
+                                command=_alle_kopieren)
+        _win2_menue.add_separator()
+        _win2_menue.add_command(label="Schließen", command=win2.destroy)
+
+        btn_frm2 = tk.Frame(haupt)
+        btn_frm2.grid(row=3, column=0, columnspan=2, sticky="ew", pady=(8, 0))
         tk.Button(btn_frm2, text="In DB speichern",
                   command=_analyse_in_db_speichern).pack(side="left", padx=(0, 6))
         tk.Button(btn_frm2, text="Frühere Analysen...",
@@ -2742,7 +2993,6 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                   command=_alle_kopieren).pack(side="left")
         tk.Button(btn_frm2, text="Schließen", command=win2.destroy,
                   width=12).pack(side="right")
-
     def ip_range_aufteilen_lokal():
         iid = _lok["item"]
         idx = _sp_idx()
