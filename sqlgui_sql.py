@@ -2658,16 +2658,17 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                     continue
                 _tag_k = ("ue",) if _zn_k in _a_zns_set else ("detail",)
                 _disp_k = _zn_zu_disp.get(_zn_k, "")
-                _lbl_k  = (_disp_k + "  " + _iw_k) if _disp_k else _iw_k
-                _cv     = ("", "", "") if _hat_grp_name else ("", "")
+                _lbl_k  = _iw_k   # IP-Wert im Baumfeld, Anzeigename in Spalte
+                _cv_k   = (_disp_k, "", "") if _hat_grp_name else ("", "")
                 _kiid = g_tv.insert(iid2, "end", text=_lbl_k,
-                                    values=_cv, tags=_tag_k)
+                                    values=_cv_k, tags=_tag_k)
                 _kind_zu_eltern[_kiid] = iid2
                 for _r2_b, _d2_b, _ol_s_b, _ol_e_b in _a_zu_b_lst.get(_zn_k, []):
                     _disp_b = _zn_zu_disp.get(_r2_b, "")
-                    _lbl_b  = "↳ " + ((_disp_b + "  " + _d2_b) if _disp_b else _d2_b)
+                    _lbl_b  = "↳ " + _d2_b
+                    _cv_b   = (_disp_b, "", "") if _hat_grp_name else ("", "")
                     _bkiid = g_tv.insert(iid2, "end", text=_lbl_b,
-                                         values=_cv, tags=("ue_pair",))
+                                         values=_cv_b, tags=("ue_pair",))
                     _kind_zu_eltern[_bkiid] = iid2
         g_tv.tag_configure("ue",      foreground="#CC0000")
         g_tv.tag_configure("detail",  foreground="#777777")
