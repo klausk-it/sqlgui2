@@ -2526,6 +2526,10 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         win2.geometry("1100x680")
         win2.minsize(700, 440)
         fenster_registrieren(win2, "Überschneidungen Kette", win2.title())
+        fenster_standard_menue_anbringen(win2, "1100x680", "Überschneidungen Kette")
+        win2.title(
+            f"{G_EXE_Title} – Überschneidungen in Kette: "
+            f"{bez_titel}  [{qf}] → [{ip_feld}]")
         # Letzte Position wiederherstellen
         _ue_pos_key = f"ue_pos_{rel_id_str}"
         _ue_pos = _sql_konfig_lesen(_ue_pos_key)
@@ -2564,33 +2568,65 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         frm_oben.rowconfigure(0, weight=1)
         frm_oben.columnconfigure(0, weight=1)
 
-        g_cols = ("gruppe", "n_ips", "n_ue")
-        g_tv = ttk.Treeview(frm_oben, columns=g_cols, show="headings",
+        g_cols = ("n_ips", "n_ue")
+        g_tv = ttk.Treeview(frm_oben, columns=g_cols, show="tree headings",
                              selectmode="browse")
-        g_tv.heading("gruppe", text=f"Gruppe  ({qf})",  anchor="w",
-                     command=lambda: _tv_sortieren(g_tv, "gruppe"))
-        g_tv.heading("n_ips",  text="IP-Einträge",       anchor="w",
+        g_tv.heading("#0",    text=f"Gruppe  ({qf})",  anchor="w")
+        g_tv.heading("n_ips", text="IP-Einträge",       anchor="w",
                      command=lambda: _tv_sortieren(g_tv, "n_ips"))
-        g_tv.heading("n_ue",   text="Überschneidungen",  anchor="w",
+        g_tv.heading("n_ue",  text="Überschneidungen",  anchor="w",
                      command=lambda: _tv_sortieren(g_tv, "n_ue"))
-        g_tv.column("gruppe",  anchor="w", width=200, stretch=False)
-        g_tv.column("n_ips",   anchor="w", width=90,  stretch=False)
-        g_tv.column("n_ue",    anchor="w", width=110, stretch=False)
+        g_tv.column("#0",     anchor="w", width=260, stretch=True,  minwidth=100)
+        g_tv.column("n_ips",  anchor="w", width=90,  stretch=False)
+        g_tv.column("n_ue",   anchor="w", width=110, stretch=False)
         ttk.Scrollbar(frm_oben, orient="vertical",
                       command=g_tv.yview).grid(row=0, column=1, sticky="ns")
         ttk.Scrollbar(frm_oben, orient="horizontal",
                       command=g_tv.xview).grid(row=1, column=0, sticky="ew")
         g_tv.grid(row=0, column=0, sticky="nsew")
 
-        iid_zu_details = {}
-        iid_zu_gw      = {}
+        iid_zu_details  = {}
+        iid_zu_gw       = {}
+        _kind_zu_eltern = {}
         for gw, n_ip, n_ue, det in gruppen_info:
-            iid2 = g_tv.insert("", "end", values=(gw, n_ip, n_ue))
+            _tags = ("ue",) if n_ue > 0 else ()
+            # Gruppennamen im #0-Feld → immer sichtbar
+            iid2 = g_tv.insert("", "end", text=str(gw),
+                                values=(n_ip, n_ue), tags=_tags)
             iid_zu_details[iid2] = det
             iid_zu_gw[iid2] = gw
-            if n_ue > 0:
-                g_tv.item(iid2, tags=("ue",))
-        g_tv.tag_configure("ue", foreground="#CC0000")
+            # A/B-Sets für diese Gruppe
+            _a_zns_set  = set()
+            _b_zns_set  = set()
+            _a_zu_b_lst = {}
+            for _dt in det:
+                _a_zns_set.add(_dt[0])
+                _b_zns_set.add(_dt[2])
+                _a_zu_b_lst.setdefault(_dt[0], []).append(
+                    (_dt[2], _dt[3], _dt[4], _dt[5]))
+            _b_only_zns = _b_zns_set - _a_zns_set
+            _sorted_eintr = sorted(
+                gruppen.get(gw, []),
+                key=lambda _e: (_k_parse(_e[1]) or (0, 0))[0]
+            )
+            for _zn_k, _iw_k in _sorted_eintr:
+                if _zn_k in _b_only_zns:
+                    continue
+                _tag_k = ("ue",) if _zn_k in _a_zns_set else ("detail",)
+                _disp_k = _zn_zu_disp.get(_zn_k, "")
+                _lbl_k  = (_disp_k + "  " + _iw_k) if _disp_k else _iw_k
+                _kiid = g_tv.insert(iid2, "end", text=_lbl_k,
+                                    values=("", ""), tags=_tag_k)
+                _kind_zu_eltern[_kiid] = iid2
+                for _r2_b, _d2_b, _ol_s_b, _ol_e_b in _a_zu_b_lst.get(_zn_k, []):
+                    _disp_b = _zn_zu_disp.get(_r2_b, "")
+                    _lbl_b  = "↳ " + ((_disp_b + "  " + _d2_b) if _disp_b else _d2_b)
+                    _bkiid = g_tv.insert(iid2, "end", text=_lbl_b,
+                                         values=("", ""), tags=("ue_pair",))
+                    _kind_zu_eltern[_bkiid] = iid2
+        g_tv.tag_configure("ue",      foreground="#CC0000")
+        g_tv.tag_configure("detail",  foreground="#777777")
+        g_tv.tag_configure("ue_pair", foreground="#995500")
         tree_spalten_breiten_anpassen(g_tv)
 
         def _g_tv_header_menu(event):
@@ -2652,8 +2688,9 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             sel = g_tv.selection()
             if not sel:
                 return
-            det = iid_zu_details.get(sel[0], [])
-            gw  = iid_zu_gw.get(sel[0], g_tv.item(sel[0], "values")[0])
+            _eiid = _kind_zu_eltern.get(sel[0], sel[0])
+            det = iid_zu_details.get(_eiid, [])
+            gw  = iid_zu_gw.get(_eiid, g_tv.item(_eiid, "text"))
             d_tv.delete(*d_tv.get_children())
             for r1, d1, r2, d2, ol_s, ol_e, cnt in det:
                 d_tv.insert("", "end", values=(r1, d1, r2, d2, ol_s, ol_e, cnt))
