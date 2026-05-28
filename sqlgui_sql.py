@@ -2800,8 +2800,10 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             text="← Gruppe auswählen", anchor="w", fg="#555555")
         _schr_status2.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 2))
 
-        _schr_tv2 = ttk.Treeview(_schr_tv_frm, columns=(), show="headings",
+        _schr_tv2 = ttk.Treeview(_schr_tv_frm, columns=(), show="tree",
                                   selectmode="browse")
+        _schr_tv2.column("#0", width=900, minwidth=300, stretch=True)
+        _schr_tv2.heading("#0", text="")
         _schr_sy2 = ttk.Scrollbar(_schr_tv_frm, orient="vertical",
                                    command=_schr_tv2.yview)
         _schr_sx2 = ttk.Scrollbar(_schr_tv_frm, orient="horizontal",
@@ -2811,167 +2813,122 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _schr_tv2.grid(row=1, column=0, sticky="nsew")
         _schr_sy2.grid(row=1, column=1, sticky="ns")
         _schr_sx2.grid(row=2, column=0, sticky="ew")
+        _schr_tv2.tag_configure("step_hdr",
+            font=("Segoe UI", 9, "bold"), foreground="#003388")
+        _schr_tv2.tag_configure("col_hdr",
+            font=("Courier New", 8), foreground="#555555")
+        _schr_tv2.tag_configure("daten",
+            font=("Courier New", 8), foreground="#111111")
+        _schr_tv2.tag_configure("daten_ja",
+            font=("Courier New", 8, "bold"), foreground="#AA0000")
 
         # ── Schrittweise: Alle Ergebniszeilen laden (Vollabfrage) ─────────────
         # ── Schrittweise: Algorithmus-Schritte aufbauen ──────────────────────
         def _schr2_build_steps(gw_val):
-            """Baut 5 Algorithmus-Schritte auf Basis der bereits berechneten Daten."""
-            gw_s     = str(gw_val)
-            eintr    = gruppen.get(gw_s, [])
+            """Baut 5 Algorithmus-Schritte aus den vorberechneten Daten."""
+            gw_s  = str(gw_val)
+            eintr = gruppen.get(gw_s, [])
             schritte = []
 
-            # ── Schritt 1: DB-Einträge ────────────────────────────────────────
+            # Schritt 1: DB-Einträge
             sp1 = ["Zeile", "IP-Wert", "Anzeigename"]
             z1  = [(str(zn), iw, _zn_zu_disp.get(zn, ""))
                    for zn, iw in eintr]
-            schritte.append({
-                "titel":   "DB-Einträge",
-                "spalten": sp1, "zeilen": z1,
-                "status":  f"Schritt 1: {len(z1)} Einträge aus der DB"})
+            schritte.append({"titel": "DB-Einträge", "spalten": sp1, "zeilen": z1,
+                             "status": f"Schritt 1: {len(z1)} Einträge aus der DB"})
 
-            # ── Schritt 2: IP → Integer Umrechnung ───────────────────────────
+            # Schritt 2: IP → Integer
             sp2 = ["Zeile", "IP-Wert", "Typ",
-                   "Start-IP", "End-IP", "Start-Int", "End-Int", "Umfang (IPs)"]
-            z2     = []
+                   "Start-IP", "End-IP", "Start-Int", "End-Int", "Umfang"]
+            z2 = []
             parsed = []
             for zn, iw in eintr:
                 r = _k_parse(iw)
                 if r:
-                    typ = ("CIDR"    if "/" in iw else
-                           "Range"   if _re3.search(r"[-–]", iw) else
+                    typ = ("CIDR"     if "/" in iw else
+                           "Range"    if _re3.search(r"[-–]", iw) else
                            "Einzel-IP")
                     z2.append((str(zn), iw, typ,
                                _k_i2ip(r[0]), _k_i2ip(r[1]),
-                               str(r[0]), str(r[1]),
-                               str(r[1] - r[0] + 1)))
+                               str(r[0]), str(r[1]), str(r[1]-r[0]+1)))
                     parsed.append((r[0], r[1], zn, iw))
                 else:
                     z2.append((str(zn), iw, "ungültig",
-                               "—", "—", "—", "—", "—"))
-            n_ok  = sum(1 for row in z2 if row[2] != "ungültig")
-            n_inv = len(z2) - n_ok
-            schritte.append({
-                "titel":   "IP → Integer",
-                "spalten": sp2, "zeilen": z2,
-                "status":  (f"Schritt 2: {n_ok} gültig"
-                            + (f", {n_inv} ungültig" if n_inv else ""))})
+                               "—","—","—","—","—"))
+            n_ok = sum(1 for row in z2 if row[2] != "ungültig")
+            schritte.append({"titel": "IP → Integer",
+                             "spalten": sp2, "zeilen": z2,
+                             "status": f"Schritt 2: {n_ok} gültig"})
 
-            # ── Schritt 3: Sortierung nach Start-Int ─────────────────────────
+            # Schritt 3: Sortiert
             sortiert = sorted(parsed, key=lambda x: x[0])
-            sp3 = ["Rang", "Start-IP", "End-IP", "Umfang (IPs)", "Zeile", "IP-Wert"]
-            z3  = [(str(i + 1),
-                    _k_i2ip(s), _k_i2ip(e),
-                    str(e - s + 1),
-                    str(zn), iw)
+            sp3 = ["Rang", "Start-IP", "End-IP", "Umfang", "Zeile", "IP-Wert"]
+            z3  = [(str(i+1), _k_i2ip(s), _k_i2ip(e),
+                    str(e-s+1), str(zn), iw)
                    for i, (s, e, zn, iw) in enumerate(sortiert)]
-            schritte.append({
-                "titel":   "Sortiert nach Start-IP",
-                "spalten": sp3, "zeilen": z3,
-                "status":  f"Schritt 3: {len(z3)} Einträge aufsteigend sortiert"})
+            schritte.append({"titel": "Sortiert nach Start-IP",
+                             "spalten": sp3, "zeilen": z3,
+                             "status": f"Schritt 3: {len(z3)} sortiert"})
 
-            # ── Schritt 4: Sweep – paarweiser Vergleich ───────────────────────
+            # Schritt 4: Sweep
             sp4 = ["Zeile A", "IP A", "Zeile B", "IP B",
                    "Überschneidung?",
                    "Überschn. Start", "Überschn. Ende", "Anzahl IPs"]
-            z4       = []
+            z4 = []
             overlaps = []
             for i in range(len(sortiert)):
                 s1, e1, r1, d1 = sortiert[i]
-                for j in range(i + 1, len(sortiert)):
+                for j in range(i+1, len(sortiert)):
                     s2, e2, r2, d2 = sortiert[j]
                     if s2 > e1:
                         z4.append((str(r1), d1, str(r2), d2,
-                                   "Nein – Abstand zu groß", "", "", ""))
+                                   "Nein – Abstand", "","",""))
                         break
-                    ol_s = s2
-                    ol_e = min(e1, e2)
-                    cnt  = ol_e - ol_s + 1
-                    z4.append((str(r1), d1, str(r2), d2,
-                               "Ja",
+                    ol_s = s2; ol_e = min(e1, e2); cnt = ol_e-ol_s+1
+                    z4.append((str(r1), d1, str(r2), d2, "Ja",
                                _k_i2ip(ol_s), _k_i2ip(ol_e), str(cnt)))
                     overlaps.append(
                         (r1, d1, r2, d2, _k_i2ip(ol_s), _k_i2ip(ol_e), cnt))
-            n_ja  = sum(1 for row in z4 if row[4] == "Ja")
-            n_all = len(z4)
-            schritte.append({
-                "titel":   "Sweep – Paarweiser Vergleich",
-                "spalten": sp4, "zeilen": z4,
-                "status":  (f"Schritt 4: {n_all} Vergleich(e), "
-                            f"{n_ja} Überschneidung(en) gefunden")})
+            n_ja = sum(1 for row in z4 if row[4] == "Ja")
+            schritte.append({"titel": "Sweep – Paarweiser Vergleich",
+                             "spalten": sp4, "zeilen": z4,
+                             "status": (f"Schritt 4: {len(z4)} Vergleiche, "
+                                        f"{n_ja} Überschneidung(en)")})
 
-            # ── Schritt 5: Ergebnis ───────────────────────────────────────────
+            # Schritt 5: Ergebnis
             sp5 = ["Zeile A", "Eintrag A", "Zeile B", "Eintrag B",
                    "Überschn. Start", "Überschn. Ende", "Anzahl IPs"]
             z5  = [(str(r1), d1, str(r2), d2, ol_s, ol_e, str(cnt))
                    for r1, d1, r2, d2, ol_s, ol_e, cnt in overlaps]
-            schritte.append({
-                "titel":   "Ergebnis",
-                "spalten": sp5, "zeilen": z5,
-                "status":  f"Schritt 5: {len(z5)} Überschneidung(en) gefunden"})
+            schritte.append({"titel": "Ergebnis",
+                             "spalten": sp5, "zeilen": z5,
+                             "status": f"Schritt 5: {len(z5)} Überschneidung(en)"})
             return schritte
 
-        def _schr2_tv_fill(spalten, zeilen):
-            """Treeview mit neuem Spalten-Set und Zeilen befüllen."""
-            if list(_schr_tv2["columns"]) != spalten:
-                _schr_tv2.configure(columns=spalten)
-                for col in spalten:
-                    _schr_tv2.heading(col, text=col, anchor="w")
-                    _schr_tv2.column(col, width=80, anchor="w",
-                                     minwidth=40, stretch=False)
-            _schr_tv2.delete(*_schr_tv2.get_children())
-            for row in zeilen:
-                _schr_tv2.insert("", "end",
-                    values=[str(v) if v is not None else "" for v in row])
-            if zeilen:
-                _tv_spalten_auto_breite(_schr_tv2, spalten, zeilen)
-
-        def _schr2_zeige_uebersicht():
-            """Zeigt eine Übersichtstabelle aller 5 Schritte."""
-            schritte = _schr_rows2[0]
-            sp_ue = ["nr", "titel", "eintraege"]
-            zeilen_ue = [(str(i + 1), s["titel"], str(len(s["zeilen"])))
-                         for i, s in enumerate(schritte)]
-            _schr_tv2.configure(columns=sp_ue)
-            _schr_tv2.heading("nr",        text="#",        anchor="w")
-            _schr_tv2.heading("titel",     text="Schritt",  anchor="w")
-            _schr_tv2.heading("eintraege", text="Einträge", anchor="w")
-            _schr_tv2.column("nr",        width=30,  anchor="w", stretch=False)
-            _schr_tv2.column("titel",     width=200, anchor="w", stretch=True)
-            _schr_tv2.column("eintraege", width=70,  anchor="e", stretch=False)
-            _schr_tv2.delete(*_schr_tv2.get_children())
-            for row in zeilen_ue:
-                _schr_tv2.insert("", "end", values=row)
-            n = len(schritte)
-            _schr_mode2[0] = "overview"
-            _schr_lbl2.config(text=f"Übersicht  ({n} Schritte)")
-            _schr_status2.config(
-                text=f"Alle {n} Schritte ausgeführt  (Gruppe: {_schr_gw2[0]})")
-            _btn_einzel_z.config(state="disabled")
-            _btn_einzel_w.config(state="normal" if n > 0 else "disabled")
-
-        def _schr2_zeige_schritt(idx):
-            """Zeigt einen einzelnen Algorithmus-Schritt."""
-            schritte = _schr_rows2[0]
-            if not schritte or idx < 0 or idx >= len(schritte):
-                return
-            _schr_idx2[0]  = idx
-            _schr_mode2[0] = "step"
-            s = schritte[idx]
-            _schr2_tv_fill(s["spalten"], s["zeilen"])
-            n = len(schritte)
-            _schr_lbl2.config(
-                text=f"Schritt {idx + 1}/{n}: {s['titel']}")
-            _schr_status2.config(text=s["status"])
-            _btn_einzel_z.config(
-                state="normal" if idx > 0 else "disabled")
-            _btn_einzel_w.config(
-                state="normal" if idx < n - 1 else "disabled")
+        def _schr2_step_anhaengen(s, idx, n_ges):
+            """Hängt einen Schritt als aufgeklappten Baum-Knoten ans TV an."""
+            sep = "  │  "
+            titel = (f"═══  Schritt {idx+1}/{n_ges}: {s['titel']}"
+                     f"  ({len(s['zeilen'])} Einträge)  ═══")
+            par = _schr_tv2.insert("", "end", text=titel,
+                                   open=True, tags=("step_hdr",))
+            # Spaltennamen
+            _schr_tv2.insert(par, "end",
+                text=sep.join(s["spalten"]), tags=("col_hdr",))
+            # Datenzeilen
+            for row in s["zeilen"]:
+                is_ja = (len(row) > 4 and str(row[4]) == "Ja")
+                tag   = ("daten_ja",) if is_ja else ("daten",)
+                _schr_tv2.insert(par, "end",
+                    text=sep.join(str(v) for v in row), tags=tag)
 
         def _schr2_laden(gw_val):
-            """Führt alle 5 Algorithmus-Schritte aus und zeigt die Übersicht."""
-            _schr_gw2[0] = gw_val
+            """Startet kumulativen Trace: zeigt Schritt 1."""
+            _schr_gw2[0]   = gw_val
+            _schr_idx2[0]  = 0
+            _schr_mode2[0] = "kum"
+            _schr_tv2.delete(*_schr_tv2.get_children())
             if not gw_val:
-                _schr_tv2.delete(*_schr_tv2.get_children())
                 _schr_status2.config(text="← Gruppe auswählen")
                 _schr_lbl2.config(text="—")
                 _btn_einzel_z.config(state="disabled")
@@ -2979,24 +2936,61 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                 return
             schritte = _schr2_build_steps(gw_val)
             _schr_rows2[0] = schritte
-            _schr_idx2[0]  = 0
-            _schr2_zeige_uebersicht()
+            n = len(schritte)
+            _schr2_step_anhaengen(schritte[0], 0, n)
+            _schr_lbl2.config(
+                text=f"Schritt 1/{n}: {schritte[0]['titel']}")
+            _schr_status2.config(text=schritte[0]["status"])
+            _btn_einzel_z.config(state="disabled")
+            _btn_einzel_w.config(state="normal" if n > 1 else "disabled")
 
         def _schr2_einzelschritt(richtung):
-            """Navigiert durch Einzelschritte; richtung=+1 vor, -1 zurück."""
+            """Hängt den nächsten Schritt an (vorwärts); kein Rückwärts."""
             schritte = _schr_rows2[0]
+            if not schritte or richtung < 0:
+                return
+            next_idx = _schr_idx2[0] + 1
+            if next_idx >= len(schritte):
+                return
+            _schr_idx2[0] = next_idx
+            n = len(schritte)
+            _schr2_step_anhaengen(schritte[next_idx], next_idx, n)
+            # Zum neuen Knoten scrollen
+            alle_kinder = _schr_tv2.get_children()
+            if alle_kinder:
+                _schr_tv2.see(alle_kinder[-1])
+            _schr_lbl2.config(
+                text=f"Schritt {next_idx+1}/{n}: {schritte[next_idx]['titel']}")
+            _schr_status2.config(text=schritte[next_idx]["status"])
+            _btn_einzel_z.config(state="disabled")
+            _btn_einzel_w.config(
+                state="normal" if next_idx < n-1 else "disabled")
+
+        def _schr2_alle():
+            """Zeigt alle 5 Schritte auf einmal."""
+            schritte = _schr_rows2[0]
+            if not schritte and _schr_gw2[0]:
+                schritte = _schr2_build_steps(_schr_gw2[0])
+                _schr_rows2[0] = schritte
             if not schritte:
                 return
-            if _schr_mode2[0] == "overview":
-                new_idx = 0 if richtung > 0 else len(schritte) - 1
-            else:
-                new_idx = _schr_idx2[0] + richtung
-            new_idx = max(0, min(new_idx, len(schritte) - 1))
-            _schr2_zeige_schritt(new_idx)
+            _schr_tv2.delete(*_schr_tv2.get_children())
+            n = len(schritte)
+            for i, s in enumerate(schritte):
+                _schr2_step_anhaengen(s, i, n)
+            _schr_idx2[0] = n - 1
+            alle_kinder = _schr_tv2.get_children()
+            if alle_kinder:
+                _schr_tv2.see(alle_kinder[-1])
+            _schr_lbl2.config(text=f"Alle {n} Schritte")
+            _schr_status2.config(
+                text=f"Alle {n} Schritte  (Gruppe: {_schr_gw2[0]})")
+            _btn_einzel_z.config(state="disabled")
+            _btn_einzel_w.config(state="disabled")
 
         _btn_einzel_z.config(command=lambda: _schr2_einzelschritt(-1))
         _btn_einzel_w.config(command=lambda: _schr2_einzelschritt(+1))
-        _btn_alle2.config(command=lambda: _schr2_laden(_schr_gw2[0]))
+        _btn_alle2.config(command=_schr2_alle)
 
         # Gruppen-Selektion aktualisiert Details + Schrittfenster
         def _details_zeigen(event=None):
