@@ -2813,118 +2813,186 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _schr_sx2.grid(row=2, column=0, sticky="ew")
 
         # ── Schrittweise: Alle Ergebniszeilen laden (Vollabfrage) ─────────────
+        # ── Schrittweise: Algorithmus-Schritte aufbauen ──────────────────────
+        def _schr2_build_steps(gw_val):
+            """Baut 5 Algorithmus-Schritte auf Basis der bereits berechneten Daten."""
+            gw_s     = str(gw_val)
+            eintr    = gruppen.get(gw_s, [])
+            schritte = []
+
+            # ── Schritt 1: DB-Einträge ────────────────────────────────────────
+            sp1 = ["Zeile", "IP-Wert", "Anzeigename"]
+            z1  = [(str(zn), iw, _zn_zu_disp.get(zn, ""))
+                   for zn, iw in eintr]
+            schritte.append({
+                "titel":   "DB-Einträge",
+                "spalten": sp1, "zeilen": z1,
+                "status":  f"Schritt 1: {len(z1)} Einträge aus der DB"})
+
+            # ── Schritt 2: IP → Integer Umrechnung ───────────────────────────
+            sp2 = ["Zeile", "IP-Wert", "Typ",
+                   "Start-IP", "End-IP", "Start-Int", "End-Int", "Umfang (IPs)"]
+            z2     = []
+            parsed = []
+            for zn, iw in eintr:
+                r = _k_parse(iw)
+                if r:
+                    typ = ("CIDR"    if "/" in iw else
+                           "Range"   if _re3.search(r"[-–]", iw) else
+                           "Einzel-IP")
+                    z2.append((str(zn), iw, typ,
+                               _k_i2ip(r[0]), _k_i2ip(r[1]),
+                               str(r[0]), str(r[1]),
+                               str(r[1] - r[0] + 1)))
+                    parsed.append((r[0], r[1], zn, iw))
+                else:
+                    z2.append((str(zn), iw, "ungültig",
+                               "—", "—", "—", "—", "—"))
+            n_ok  = sum(1 for row in z2 if row[2] != "ungültig")
+            n_inv = len(z2) - n_ok
+            schritte.append({
+                "titel":   "IP → Integer",
+                "spalten": sp2, "zeilen": z2,
+                "status":  (f"Schritt 2: {n_ok} gültig"
+                            + (f", {n_inv} ungültig" if n_inv else ""))})
+
+            # ── Schritt 3: Sortierung nach Start-Int ─────────────────────────
+            sortiert = sorted(parsed, key=lambda x: x[0])
+            sp3 = ["Rang", "Start-IP", "End-IP", "Umfang (IPs)", "Zeile", "IP-Wert"]
+            z3  = [(str(i + 1),
+                    _k_i2ip(s), _k_i2ip(e),
+                    str(e - s + 1),
+                    str(zn), iw)
+                   for i, (s, e, zn, iw) in enumerate(sortiert)]
+            schritte.append({
+                "titel":   "Sortiert nach Start-IP",
+                "spalten": sp3, "zeilen": z3,
+                "status":  f"Schritt 3: {len(z3)} Einträge aufsteigend sortiert"})
+
+            # ── Schritt 4: Sweep – paarweiser Vergleich ───────────────────────
+            sp4 = ["Zeile A", "IP A", "Zeile B", "IP B",
+                   "Überschneidung?",
+                   "Überschn. Start", "Überschn. Ende", "Anzahl IPs"]
+            z4       = []
+            overlaps = []
+            for i in range(len(sortiert)):
+                s1, e1, r1, d1 = sortiert[i]
+                for j in range(i + 1, len(sortiert)):
+                    s2, e2, r2, d2 = sortiert[j]
+                    if s2 > e1:
+                        z4.append((str(r1), d1, str(r2), d2,
+                                   "Nein – Abstand zu groß", "", "", ""))
+                        break
+                    ol_s = s2
+                    ol_e = min(e1, e2)
+                    cnt  = ol_e - ol_s + 1
+                    z4.append((str(r1), d1, str(r2), d2,
+                               "Ja",
+                               _k_i2ip(ol_s), _k_i2ip(ol_e), str(cnt)))
+                    overlaps.append(
+                        (r1, d1, r2, d2, _k_i2ip(ol_s), _k_i2ip(ol_e), cnt))
+            n_ja  = sum(1 for row in z4 if row[4] == "Ja")
+            n_all = len(z4)
+            schritte.append({
+                "titel":   "Sweep – Paarweiser Vergleich",
+                "spalten": sp4, "zeilen": z4,
+                "status":  (f"Schritt 4: {n_all} Vergleich(e), "
+                            f"{n_ja} Überschneidung(en) gefunden")})
+
+            # ── Schritt 5: Ergebnis ───────────────────────────────────────────
+            sp5 = ["Zeile A", "Eintrag A", "Zeile B", "Eintrag B",
+                   "Überschn. Start", "Überschn. Ende", "Anzahl IPs"]
+            z5  = [(str(r1), d1, str(r2), d2, ol_s, ol_e, str(cnt))
+                   for r1, d1, r2, d2, ol_s, ol_e, cnt in overlaps]
+            schritte.append({
+                "titel":   "Ergebnis",
+                "spalten": sp5, "zeilen": z5,
+                "status":  f"Schritt 5: {len(z5)} Überschneidung(en) gefunden"})
+            return schritte
+
+        def _schr2_tv_fill(spalten, zeilen):
+            """Treeview mit neuem Spalten-Set und Zeilen befüllen."""
+            if list(_schr_tv2["columns"]) != spalten:
+                _schr_tv2.configure(columns=spalten)
+                for col in spalten:
+                    _schr_tv2.heading(col, text=col, anchor="w")
+                    _schr_tv2.column(col, width=80, anchor="w",
+                                     minwidth=40, stretch=False)
+            _schr_tv2.delete(*_schr_tv2.get_children())
+            for row in zeilen:
+                _schr_tv2.insert("", "end",
+                    values=[str(v) if v is not None else "" for v in row])
+            if zeilen:
+                _tv_spalten_auto_breite(_schr_tv2, spalten, zeilen)
+
+        def _schr2_zeige_uebersicht():
+            """Zeigt eine Übersichtstabelle aller 5 Schritte."""
+            schritte = _schr_rows2[0]
+            sp_ue = ["nr", "titel", "eintraege"]
+            zeilen_ue = [(str(i + 1), s["titel"], str(len(s["zeilen"])))
+                         for i, s in enumerate(schritte)]
+            _schr_tv2.configure(columns=sp_ue)
+            _schr_tv2.heading("nr",        text="#",        anchor="w")
+            _schr_tv2.heading("titel",     text="Schritt",  anchor="w")
+            _schr_tv2.heading("eintraege", text="Einträge", anchor="w")
+            _schr_tv2.column("nr",        width=30,  anchor="w", stretch=False)
+            _schr_tv2.column("titel",     width=200, anchor="w", stretch=True)
+            _schr_tv2.column("eintraege", width=70,  anchor="e", stretch=False)
+            _schr_tv2.delete(*_schr_tv2.get_children())
+            for row in zeilen_ue:
+                _schr_tv2.insert("", "end", values=row)
+            n = len(schritte)
+            _schr_mode2[0] = "overview"
+            _schr_lbl2.config(text=f"Übersicht  ({n} Schritte)")
+            _schr_status2.config(
+                text=f"Alle {n} Schritte ausgeführt  (Gruppe: {_schr_gw2[0]})")
+            _btn_einzel_z.config(state="disabled")
+            _btn_einzel_w.config(state="normal" if n > 0 else "disabled")
+
+        def _schr2_zeige_schritt(idx):
+            """Zeigt einen einzelnen Algorithmus-Schritt."""
+            schritte = _schr_rows2[0]
+            if not schritte or idx < 0 or idx >= len(schritte):
+                return
+            _schr_idx2[0]  = idx
+            _schr_mode2[0] = "step"
+            s = schritte[idx]
+            _schr2_tv_fill(s["spalten"], s["zeilen"])
+            n = len(schritte)
+            _schr_lbl2.config(
+                text=f"Schritt {idx + 1}/{n}: {s['titel']}")
+            _schr_status2.config(text=s["status"])
+            _btn_einzel_z.config(
+                state="normal" if idx > 0 else "disabled")
+            _btn_einzel_w.config(
+                state="normal" if idx < n - 1 else "disabled")
+
         def _schr2_laden(gw_val):
-            """Führt die vollständige Kettenabfrage für gw_val aus und zeigt ALLE Zeilen."""
+            """Führt alle 5 Algorithmus-Schritte aus und zeigt die Übersicht."""
             _schr_gw2[0] = gw_val
-            _schr_mode2[0] = "all"
-            if not aktive_schritte or not gw_val:
+            if not gw_val:
                 _schr_tv2.delete(*_schr_tv2.get_children())
                 _schr_status2.config(text="← Gruppe auswählen")
                 _schr_lbl2.config(text="—")
                 _btn_einzel_z.config(state="disabled")
                 _btn_einzel_w.config(state="disabled")
                 return
-            try:
-                _vb_sa = sqlite_verbindung_oeffnen()
-                _als_sa = [f"_sa{i}" for i in range(len(aktive_schritte) + 1)]
-                from collections import Counter as _Ctr
-                _felder_alle = []
-                for _i_a, _s_a in enumerate(aktive_schritte):
-                    _ff = list(_s_a.get("felder", [])) or [
-                        r[1] for r in _vb_sa.execute(
-                            f"PRAGMA table_info("
-                            f"{sql_identifier(_s_a.get('zu_tab',''))})"
-                        ).fetchall()
-                    ]
-                    _felder_alle.append(
-                        (_i_a, _s_a.get("zu_tab","?"), _als_sa[_i_a+1], _ff))
-                _zaehler = _Ctr(
-                    f for (_, _, _, fl) in _felder_alle for f in fl)
-                _sel_p = []
-                _sp_a  = []
-                for (_i_a, _t_a, _al_a, _ff_a) in _felder_alle:
-                    for _f_a in _ff_a:
-                        _ca = f"{_t_a}.{_f_a}" if _zaehler[_f_a] > 1 else _f_a
-                        _sel_p.append(
-                            f"{_al_a}.{sql_identifier(_f_a)} "
-                            f"AS {sql_identifier(_ca)}")
-                        _sp_a.append(_ca)
-                _joins_sa = " ".join(
-                    f"LEFT JOIN {sql_identifier(s['zu_tab'])} {_als_sa[i+1]} "
-                    f"ON {_als_sa[i+1]}.{sql_identifier(s['zu_feld'])} "
-                    f"= {_als_sa[i]}.{sql_identifier(s['von_feld'])}"
-                    for i, s in enumerate(aktive_schritte)
-                )
-                _sql_sa = (
-                    f"SELECT {', '.join(_sel_p)} "
-                    f"FROM {sql_identifier(qt)} {_als_sa[0]} "
-                    f"{_joins_sa} WHERE {_als_sa[0]}.{sql_identifier(qf)}=?")
-                _cur_sa = _vb_sa.cursor()
-                _cur_sa.execute(_sql_sa, (gw_val,))
-                _zeilen_sa = _cur_sa.fetchall()
-                _vb_sa.close()
-            except Exception as _e_sa:
-                messagebox.showwarning("Alle ausführen",
-                    f"Fehler:\n{_e_sa}", parent=win2)
-                return
-            _schr_rows2[0] = _zeilen_sa
-            _schr_cols2[0] = _sp_a
+            schritte = _schr2_build_steps(gw_val)
+            _schr_rows2[0] = schritte
             _schr_idx2[0]  = 0
-            # Treeview befüllen
-            if list(_schr_tv2["columns"]) != _sp_a:
-                _schr_tv2.configure(columns=_sp_a)
-                for _sp_s in _sp_a:
-                    _schr_tv2.heading(_sp_s, text=_sp_s, anchor="w")
-                    _schr_tv2.column(_sp_s, width=80, anchor="w",
-                                     minwidth=40, stretch=False)
-            _schr_tv2.delete(*_schr_tv2.get_children())
-            for _z_sa in _zeilen_sa:
-                _schr_tv2.insert("", "end",
-                    values=[str(v) if v is not None else "" for v in _z_sa])
-            _tv_spalten_auto_breite(_schr_tv2, _sp_a, _zeilen_sa)
-            n = len(_zeilen_sa)
-            _schr_lbl2.config(text=f"Alle {n} Einträge")
-            _schr_status2.config(
-                text=f"Alle {n} Einträge  (Gruppe: {gw_val})")
-            _btn_einzel_z.config(state="disabled")
-            _btn_einzel_w.config(
-                state="normal" if n > 0 else "disabled")
+            _schr2_zeige_uebersicht()
 
-        # ── Schrittweise: Einzelschritt vorwärts / rückwärts ──────────────────
         def _schr2_einzelschritt(richtung):
-            """Zeigt eine einzelne Ergebniszeile; richtung=+1 vor, -1 zurück."""
-            rows = _schr_rows2[0]
-            cols = _schr_cols2[0]
-            if not rows:
+            """Navigiert durch Einzelschritte; richtung=+1 vor, -1 zurück."""
+            schritte = _schr_rows2[0]
+            if not schritte:
                 return
-            if _schr_mode2[0] == "all":
-                # Vom Alle-Modus in Einzelschritt: beim ersten (oder letzten) Eintrag starten
-                new_idx = 0 if richtung > 0 else len(rows) - 1
+            if _schr_mode2[0] == "overview":
+                new_idx = 0 if richtung > 0 else len(schritte) - 1
             else:
                 new_idx = _schr_idx2[0] + richtung
-            new_idx = max(0, min(new_idx, len(rows) - 1))
-            _schr_idx2[0]  = new_idx
-            _schr_mode2[0] = "single"
-            zeile = rows[new_idx]
-            if list(_schr_tv2["columns"]) != cols:
-                _schr_tv2.configure(columns=cols)
-                for _sp_s in cols:
-                    _schr_tv2.heading(_sp_s, text=_sp_s, anchor="w")
-                    _schr_tv2.column(_sp_s, width=80, anchor="w",
-                                     minwidth=40, stretch=False)
-            _schr_tv2.delete(*_schr_tv2.get_children())
-            _schr_tv2.insert("", "end",
-                values=[str(v) if v is not None else "" for v in zeile])
-            _tv_spalten_auto_breite(_schr_tv2, cols, [zeile])
-            n = len(rows)
-            _schr_lbl2.config(
-                text=f"Schritt {new_idx+1}/{n}")
-            _schr_status2.config(
-                text=f"Schritt {new_idx+1}/{n}  (Gruppe: {_schr_gw2[0]})")
-            _btn_einzel_z.config(
-                state="normal" if new_idx > 0 else "disabled")
-            _btn_einzel_w.config(
-                state="normal" if new_idx < n - 1 else "disabled")
+            new_idx = max(0, min(new_idx, len(schritte) - 1))
+            _schr2_zeige_schritt(new_idx)
 
         _btn_einzel_z.config(command=lambda: _schr2_einzelschritt(-1))
         _btn_einzel_w.config(command=lambda: _schr2_einzelschritt(+1))
