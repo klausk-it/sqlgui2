@@ -4224,9 +4224,8 @@ def _workflow_ketten_fenster_oeffnen(rel_id_str, projektname):
 
     # Menü-Eintrag + Auto-Öffnen
     if kette_liste:
-        kf_menue.add_command(label="Schrittweise Fenster",
+        kf_menue.add_command(label="Schrittweise Fenster (separat)",
                              command=_schr_fenster_oeffnen)
-        win.after(200, _schr_fenster_oeffnen)
 
     # Selektion in Quelltabelle → Ergebnis UND Schrittfenster aktualisieren
     def _on_quell_select_erw(event=None):
