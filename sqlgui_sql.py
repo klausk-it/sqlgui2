@@ -3561,6 +3561,107 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             f"WHERE {id_feld}={id_wert}: "
             f"'{alt_wert[:50]}' → '{neu_wert[:50]}'", 0)
 
+    # ── Block 7: Beziehungen / Navigation ───────────────────────────────────
+    def definierte_beziehungen_anzeigen():
+        try:
+            _vb_br = sqlite_verbindung_oeffnen()
+            _rels  = _vb_br.execute(
+                "SELECT Bezeichnung, Typ, QuellTabelle, QuellFeld, "
+                "ZielTabelle, ZielFeld "
+                "FROM zzz_Relationen "
+                "WHERE QuellTabelle=? OR ZielTabelle=? "
+                "ORDER BY Bezeichnung",
+                (tabellenname, tabellenname)
+            ).fetchall()
+            _vb_br.close()
+        except Exception as _e_br:
+            messagebox.showwarning("Beziehungen",
+                f"Fehler:\n{_e_br}", parent=parent_win)
+            return
+        if not _rels:
+            messagebox.showinfo("Beziehungen",
+                f"Für '{tabellenname}' sind keine Beziehungen definiert.",
+                parent=parent_win)
+            return
+        _txt = f"Definierte Beziehungen für Tabelle '{tabellenname}':\n\n"
+        for _bez, _typ, _qt, _qf, _zt, _zf in _rels:
+            _richtung = "→" if _qt == tabellenname else "←"
+            _txt += (f"  [{_typ}]  {_bez or '(ohne Bezeichnung)'}\n"
+                     f"    {_qt}.{_qf}  {_richtung}  {_zt}.{_zf}\n\n")
+        sql_text_im_lesefenster_anzeigen(
+            parent_win, f"Beziehungen: {tabellenname}", _txt)
+
+    def in_vorhergehender_tabelle_zeigen():
+        if not _lok["item"]:
+            messagebox.showwarning("Vorherige Tabelle",
+                "Bitte zuerst eine Zeile auswählen.", parent=parent_win)
+            return
+        try:
+            _vb_vt = sqlite_verbindung_oeffnen()
+            _vt_rels = _vb_vt.execute(
+                "SELECT Bezeichnung, QuellTabelle, QuellFeld, ZielFeld "
+                "FROM zzz_Relationen WHERE ZielTabelle=? "
+                "ORDER BY Bezeichnung",
+                (tabellenname,)
+            ).fetchall()
+            _vb_vt.close()
+        except Exception as _e_vt:
+            messagebox.showwarning("Vorherige Tabelle",
+                f"Fehler:\n{_e_vt}", parent=parent_win)
+            return
+        if not _vt_rels:
+            messagebox.showinfo("Vorherige Tabelle",
+                f"Keine Beziehung gefunden, bei der '{tabellenname}' "
+                f"die Zieltabelle ist.",
+                parent=parent_win)
+            return
+        # Falls mehrere Beziehungen: erste nehmen (oder auswählen lassen)
+        _vt_bez, _vt_qt, _vt_qf, _vt_zf = _vt_rels[0]
+        _alle_sp = _alle_sp()
+        _werte   = tv_widget.item(_lok["item"], "values")
+        _zf_wert = None
+        if _vt_zf in _alle_sp:
+            _zi = _alle_sp.index(_vt_zf)
+            _zf_wert = _werte[_zi] if _zi < len(_werte) else None
+        if not _zf_wert:
+            messagebox.showinfo("Vorherige Tabelle",
+                f"Verknüpfungsfeld '{_vt_zf}' nicht in der aktuellen Anzeige.\n"
+                f"Quelltabelle wäre: {_vt_qt}",
+                parent=parent_win)
+            return
+        try:
+            _vb_vt2 = sqlite_verbindung_oeffnen()
+            _cur_vt  = _vb_vt2.cursor()
+            _cur_vt.execute(
+                f"SELECT * FROM {sql_identifier(_vt_qt)} "
+                f"WHERE {sql_identifier(_vt_qf)}=?",
+                (_zf_wert,)
+            )
+            _rows_vt = _cur_vt.fetchall()
+            _cols_vt = ([d[0] for d in _cur_vt.description]
+                        if _cur_vt.description else [])
+            _vb_vt2.close()
+        except Exception as _e_vt2:
+            messagebox.showwarning("Vorherige Tabelle",
+                f"Fehler beim Laden aus '{_vt_qt}':\n{_e_vt2}",
+                parent=parent_win)
+            return
+        if not _rows_vt:
+            messagebox.showinfo("Vorherige Tabelle",
+                f"Kein Eintrag in '{_vt_qt}' "
+                f"wo {_vt_qf} = '{_zf_wert}'.",
+                parent=parent_win)
+            return
+        _txt_vt = (f"Vorherige Tabelle: {_vt_qt}\n"
+                   f"Beziehung: {_vt_bez or '(ohne Bezeichnung)'}\n"
+                   f"Filter: {_vt_qf} = '{_zf_wert}'\n\n")
+        for _row_vt in _rows_vt[:20]:
+            for _col_vt, _val_vt in zip(_cols_vt, _row_vt):
+                _txt_vt += f"  {_col_vt}: {_val_vt}\n"
+            _txt_vt += "\n"
+        sql_text_im_lesefenster_anzeigen(
+            parent_win, f"Vorherige Tabelle: {_vt_qt}", _txt_vt)
+
     # ── Rechtsklick-Event ────────────────────────────────────────────────────
     def rechtsklick(event):
         region = tv_widget.identify_region(event.x, event.y)
@@ -3620,6 +3721,12 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             m.add_separator()
             m.add_command(label="Zeile löschen",  command=zeile_loeschen)
             m.add_command(label="Feld editieren",  command=feld_editieren)
+        # Block 7: Tabellenbeziehungen / Navigation
+        m.add_separator()
+        m.add_command(label="Definierte Beziehungen anzeigen",
+                      command=definierte_beziehungen_anzeigen)
+        m.add_command(label="In vorhergehender Tabelle zeigen",
+                      command=in_vorhergehender_tabelle_zeigen)
         try:
             m.tk_popup(event.x_root, event.y_root)
         finally:
