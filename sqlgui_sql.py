@@ -2553,6 +2553,8 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             f"{bez_titel}  [{qf}] → [{ip_feld}]")
         win2.geometry("1560x720")
         win2.minsize(900, 480)
+        _win2_base_w = [1560]
+        win2.after(400, lambda: _win2_base_w.__setitem__(0, win2.winfo_width()))
         fenster_registrieren(win2, "Überschneidungen Kette", win2.title())
         _win2_menue = fenster_standard_menue_anbringen(
             win2, "1560x720", "Überschneidungen Kette")
@@ -2823,6 +2825,46 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _schr_tv2.tag_configure("daten_ja",
             font=("Consolas", 10, "bold"), foreground="#CC0000")
 
+        # ── Schrittweise: Auto-Resize win2 je nach TV-Inhalt ────────────────────
+        def _schr_auto_breite():
+            """Misst längste Zeile im Schrittfenster und weitet win2 aus."""
+            try:
+                import tkinter.font as _tkf
+                _fnt = _tkf.Font(family="Consolas", size=10, weight="bold")
+                _max_w = 600
+                def _mess(iid, tiefe=0):
+                    nonlocal _max_w
+                    txt = _schr_tv2.item(iid, "text")
+                    w = _fnt.measure(txt) + 24 + tiefe * 20
+                    if w > _max_w:
+                        _max_w = w
+                    for ch in _schr_tv2.get_children(iid):
+                        _mess(ch, tiefe + 1)
+                for _top in _schr_tv2.get_children():
+                    _mess(_top)
+                _max_w = min(_max_w + 40, 2400)   # Scrollbar + Cap
+                _schr_tv2.column("#0", width=_max_w, minwidth=300)
+                _lks_w = links_frame.winfo_width()
+                _needed = _lks_w + _max_w + 28    # Border + Scrollbar
+                if _needed > win2.winfo_width():
+                    win2.geometry(
+                        f"{_needed}x{win2.winfo_height()}"
+                        f"+{win2.winfo_x()}+{win2.winfo_y()}")
+            except Exception:
+                pass
+
+        def _schr_reset_breite():
+            """Setzt win2 auf Basis-Breite zurück (neue Gruppe gewählt)."""
+            try:
+                _schr_tv2.column("#0", width=900, minwidth=300)
+                _bw = _win2_base_w[0]
+                if _bw > 0 and win2.winfo_width() > _bw:
+                    win2.geometry(
+                        f"{_bw}x{win2.winfo_height()}"
+                        f"+{win2.winfo_x()}+{win2.winfo_y()}")
+            except Exception:
+                pass
+
         # ── Schrittweise: Alle Ergebniszeilen laden (Vollabfrage) ─────────────
         # ── Schrittweise: Algorithmus-Schritte aufbauen ──────────────────────
         def _schr2_build_steps(gw_val):
@@ -2929,6 +2971,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             _schr_idx2[0]  = 0
             _schr_mode2[0] = "kum"
             _schr_tv2.delete(*_schr_tv2.get_children())
+            _schr_reset_breite()          # Fenster auf Basis-Breite
             if not gw_val:
                 _schr_status2.config(text="← Gruppe auswählen")
                 _schr_lbl2.config(text="—")
@@ -2944,6 +2987,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             _schr_status2.config(text=schritte[0]["status"])
             _btn_einzel_z.config(state="disabled")
             _btn_einzel_w.config(state="normal" if n > 1 else "disabled")
+            win2.after(120, _schr_auto_breite)
 
         def _schr2_einzelschritt(richtung):
             """Hängt den nächsten Schritt an (vorwärts); kein Rückwärts."""
@@ -2966,6 +3010,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             _btn_einzel_z.config(state="disabled")
             _btn_einzel_w.config(
                 state="normal" if next_idx < n-1 else "disabled")
+            win2.after(120, _schr_auto_breite)
 
         def _schr2_alle():
             """Zeigt alle 5 Schritte auf einmal."""
@@ -2988,6 +3033,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                 text=f"Alle {n} Schritte  (Gruppe: {_schr_gw2[0]})")
             _btn_einzel_z.config(state="disabled")
             _btn_einzel_w.config(state="disabled")
+            win2.after(120, _schr_auto_breite)
 
         _btn_einzel_z.config(command=lambda: _schr2_einzelschritt(-1))
         _btn_einzel_w.config(command=lambda: _schr2_einzelschritt(+1))
