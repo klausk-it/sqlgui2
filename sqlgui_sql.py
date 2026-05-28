@@ -2581,7 +2581,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         # Info + Status (beide Spalten)
         tk.Label(haupt, text=f"Kette: {ketten_pfad}", anchor="w",
-                 fg="#444444").grid(row=0, column=0, columnspan=2,
+                 fg="#444444").grid(row=0, column=0,
                                     sticky="ew", pady=(0, 2))
         farbe = "#007700" if gesamt_ue == 0 else "#CC0000"
         sym   = "✓" if gesamt_ue == 0 else "⚠"
@@ -2591,7 +2591,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                  f"·  {n_gesamt_ip} IP-Einträge gesamt")
         tk.Label(haupt, text=stat, anchor="w", fg=farbe,
                  font=("TkDefaultFont", 10, "bold")).grid(
-                     row=1, column=0, columnspan=2, sticky="ew", pady=(0, 4))
+                     row=1, column=0, sticky="ew", pady=(0, 4))
 
         # ── Linke Seite: Gruppen (oben) + Details (unten) ─────────────────────
         links_frame = tk.Frame(haupt)
@@ -2716,8 +2716,13 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         ttk.Separator(links_frame, orient="horizontal").grid(
             row=2, column=0, sticky="ew", pady=(2, 2))
-        tk.Label(links_frame, text="Details zur gewählten Gruppe:",
-                 anchor="w").grid(row=3, column=0, sticky="ew", pady=(0, 2))
+        _detail_kopf_frm = tk.Frame(links_frame)
+        _detail_kopf_frm.grid(row=3, column=0, sticky="ew", pady=(0, 2))
+        tk.Label(_detail_kopf_frm, text="Details zur gewählten Gruppe:",
+                 anchor="w").pack(side="left")
+        detail_lbl_var = tk.StringVar(value="")
+        tk.Label(_detail_kopf_frm, textvariable=detail_lbl_var, anchor="w",
+                 fg="#555555").pack(side="left", padx=(8, 0))
 
         frm_unten = tk.Frame(links_frame)
         frm_unten.grid(row=4, column=0, sticky="nsew")
@@ -2756,13 +2761,10 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         standard_tv_rechtsklick_anbinden(d_tv, qt, win2)
 
-        detail_lbl_var = tk.StringVar(value="")
-        tk.Label(links_frame, textvariable=detail_lbl_var, anchor="w",
-                 fg="#555555").grid(row=5, column=0, sticky="ew", pady=(2, 0))
 
         # ── Rechte Seite: Schrittfenster ──────────────────────────────────────
         rechts_frame = tk.Frame(haupt, relief="groove", bd=1)
-        rechts_frame.grid(row=2, column=1, sticky="nsew")
+        rechts_frame.grid(row=0, column=1, rowspan=3, sticky="nsew")
         rechts_frame.columnconfigure(0, weight=1)
         rechts_frame.rowconfigure(2, weight=1)
 
