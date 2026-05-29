@@ -2674,7 +2674,8 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         g_tv.tag_configure("ue",      foreground="#CC0000")
         g_tv.tag_configure("detail",  foreground="#777777")
         g_tv.tag_configure("ue_pair", foreground="#995500")
-        tree_spalten_breiten_anpassen(g_tv)
+        # Nach dem Rendern optimieren, damit Fontmetriken korrekt sind
+        win2.after(200, lambda: tree_spalten_breiten_anpassen(g_tv))
 
         # Navigation-Override für g_tv: gewählte Gruppe im Quell-Treeview markieren
         _outer_tv_nav = tv_widget
