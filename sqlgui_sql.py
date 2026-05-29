@@ -3054,19 +3054,17 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             det = iid_zu_details.get(_eiid, [])
             gw  = iid_zu_gw.get(_eiid, g_tv.item(_eiid, "text"))
             d_tv.delete(*d_tv.get_children())
-            # Erste Zeile pro A: vollständig (A + B); Folgezeilen: A leer = visueller Einzug
+            # A immer als eigene Zeile (fett), B immer eingerückt darunter
             _prev_a = None
             for r1, d1, r2, d2, ol_s, ol_e, cnt in det:
-                _ist_neu = (r1, d1) != _prev_a
-                if _ist_neu:
+                if (r1, d1) != _prev_a:
                     d_tv.insert("", "end",
-                                values=(r1, d1, r2, d2, ol_s, ol_e, cnt),
+                                values=(r1, d1, "", "", "", "", ""),
                                 tags=("dtv_first",))
                     _prev_a = (r1, d1)
-                else:
-                    d_tv.insert("", "end",
-                                values=("", "", r2, d2, ol_s, ol_e, cnt),
-                                tags=("dtv_cont",))
+                d_tv.insert("", "end",
+                            values=("", "", r2, d2, ol_s, ol_e, cnt),
+                            tags=("dtv_cont",))
             d_tv.tag_configure("dtv_first", font=("TkDefaultFont", 9, "bold"))
             d_tv.tag_configure("dtv_cont",  foreground="#664400")
             if det:
