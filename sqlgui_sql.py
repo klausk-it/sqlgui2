@@ -2731,16 +2731,13 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         frm_unten.columnconfigure(0, weight=1)
 
         d_cols = ("z_a", "eintrag_a", "z_b", "eintrag_b", "ol_start", "ol_end", "anz")
-        d_tv = ttk.Treeview(frm_unten, columns=d_cols, show="tree headings",
+        d_tv = ttk.Treeview(frm_unten, columns=d_cols, show="headings",
                              selectmode="browse")
-        # Baum-Spalte: nur für Einzug, kein Text
-        d_tv.column("#0",         width=14,  anchor="w", stretch=False, minwidth=14)
-        d_tv.heading("#0",        text="")
         d_tv.heading("z_a",       text="Zeile A",         anchor="w",
                      command=lambda: _tv_sortieren(d_tv, "z_a"))
         d_tv.heading("eintrag_a", text="Eintrag A",        anchor="w",
                      command=lambda: _tv_sortieren(d_tv, "eintrag_a"))
-        d_tv.heading("z_b",       text="Zeile B",          anchor="w",
+        d_tv.heading("z_b",       text="↳ Zeile B",       anchor="w",
                      command=lambda: _tv_sortieren(d_tv, "z_b"))
         d_tv.heading("eintrag_b", text="↳ Eintrag B",     anchor="w",
                      command=lambda: _tv_sortieren(d_tv, "eintrag_b"))
@@ -3057,21 +3054,20 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             det = iid_zu_details.get(_eiid, [])
             gw  = iid_zu_gw.get(_eiid, g_tv.item(_eiid, "text"))
             d_tv.delete(*d_tv.get_children())
-            # Gruppieren nach Eintrag A – B-Einträge als eingerückte Kindzeilen
+            # A-Zeile normal, B-Zeile eingerückt mit ↳-Prefix (flache Liste)
             from collections import OrderedDict as _OD
             _a_gruppen = _OD()
             for r1, d1, r2, d2, ol_s, ol_e, cnt in det:
-                _key = (r1, d1)
-                _a_gruppen.setdefault(_key, []).append((r2, d2, ol_s, ol_e, cnt))
+                _a_gruppen.setdefault((r1, d1), []).append((r2, d2, ol_s, ol_e, cnt))
             for (r1, d1), kinder in _a_gruppen.items():
-                _par = d_tv.insert("", "end", text="",
-                                   values=(r1, d1, "", "", "", "", ""),
-                                   open=True, tags=("dtv_a",))
+                d_tv.insert("", "end",
+                            values=(r1, d1, "", "", "", "", ""),
+                            tags=("dtv_a",))
                 for r2, d2, ol_s, ol_e, cnt in kinder:
-                    d_tv.insert(_par, "end", text="",
-                                values=("", "", r2, d2, ol_s, ol_e, cnt),
+                    d_tv.insert("", "end",
+                                values=("", "", "  ↳ " + str(r2), d2, ol_s, ol_e, cnt),
                                 tags=("dtv_b",))
-            d_tv.tag_configure("dtv_a", foreground="#000000")
+            d_tv.tag_configure("dtv_a", foreground="#000000", font=("TkDefaultFont", 9, "bold"))
             d_tv.tag_configure("dtv_b", foreground="#884400")
             if det:
                 tree_spalten_breiten_anpassen(d_tv)
