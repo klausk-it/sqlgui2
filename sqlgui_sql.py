@@ -2768,7 +2768,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         rechts_frame = tk.Frame(haupt, relief="groove", bd=1)
         rechts_frame.grid(row=0, column=1, rowspan=3, sticky="nsew")
         rechts_frame.columnconfigure(0, weight=1)
-        rechts_frame.rowconfigure(2, weight=1)
+        rechts_frame.rowconfigure(3, weight=1)
         _rechts_basis_w = [750]
         rechts_frame.config(width=_rechts_basis_w[0])
         rechts_frame.grid_propagate(False)
@@ -2795,10 +2795,18 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _btn_einzel_w = tk.Button(_schr_btn_frm, text="Einzelschritt ►", width=14)
         _btn_einzel_w.pack(side="left", padx=(4, 8))
         _btn_alle2 = tk.Button(_schr_btn_frm, text="Alle ausführen", width=14)
-        _btn_alle2.pack(side="left")
+        _btn_alle2.pack(side="left", padx=(0, 8))
+
+        # Zweite Button-Zeile: Alle Gruppen Ergebnis
+        _schr_btn_frm2 = tk.Frame(rechts_frame, padx=6)
+        _schr_btn_frm2.grid(row=2, column=0, sticky="ew", pady=(0, 2))
+        _btn_alle_grp = tk.Button(_schr_btn_frm2,
+            text="Alle Gruppen: Ergebnis (Schritt 5)",
+            font=("Segoe UI", 8))
+        _btn_alle_grp.pack(side="left")
 
         _schr_tv_frm = tk.Frame(rechts_frame, padx=6)
-        _schr_tv_frm.grid(row=2, column=0, sticky="nsew")
+        _schr_tv_frm.grid(row=3, column=0, sticky="nsew")
         _schr_tv_frm.columnconfigure(0, weight=1)
         _schr_tv_frm.rowconfigure(1, weight=1)
 
@@ -3109,6 +3117,35 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _btn_einzel_z.config(command=lambda: _schr2_einzelschritt(-1))
         _btn_einzel_w.config(command=lambda: _schr2_einzelschritt(+1))
         _btn_alle2.config(command=_schr2_alle)
+
+        def _alle_gruppen_ergebnis():
+            """Zeigt Schritt-5-Ergebnisse aller Gruppen MIT Überschneidungen."""
+            _schr_tv2.delete(*_schr_tv2.get_children())
+            _schr_reset_breite()
+            _schr_gw2[0]  = None
+            _schr_idx2[0] = 0
+            _gruppen_mit_ue = [(gw, n_ue, det)
+                               for gw, n_ip, n_ue, det in gruppen_info
+                               if n_ue > 0]
+            if not _gruppen_mit_ue:
+                _schr_status2.config(text="Keine Überschneidungen vorhanden.")
+                return
+            _schr_status2.config(
+                text=f"Alle Gruppen: {len(_gruppen_mit_ue)} mit Überschneidungen")
+            _schr_lbl2.config(text=f"Alle Gruppen – Schritt 5")
+            for gw, n_ue, det in _gruppen_mit_ue:
+                schritte = _schr2_build_steps(gw)
+                if schritte:
+                    s5 = schritte[-1]   # Schritt 5 = letzter
+                    _schr2_step_anhaengen(s5, 4, 5)
+            alle_kinder = _schr_tv2.get_children()
+            if alle_kinder:
+                _schr_tv2.see(alle_kinder[0])  # Zum Anfang scrollen
+            _btn_einzel_w.config(state="disabled", text="Einzelschritt ►")
+            _btn_einzel_z.config(state="disabled")
+            win2.after(150, _schr_auto_breite)
+
+        _btn_alle_grp.config(command=_alle_gruppen_ergebnis)
 
         # Gruppen-Selektion aktualisiert Details + Schrittfenster
         def _details_zeigen(event=None):
