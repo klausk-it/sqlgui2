@@ -2553,8 +2553,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             f"{bez_titel}  [{qf}] → [{ip_feld}]")
         win2.geometry("1560x720")
         win2.minsize(900, 480)
-        _win2_base_w = [1560]
-        win2.after(400, lambda: _win2_base_w.__setitem__(0, win2.winfo_width()))
+
         fenster_registrieren(win2, "Überschneidungen Kette", win2.title())
         _win2_menue = fenster_standard_menue_anbringen(
             win2, "1560x720", "Überschneidungen Kette")
@@ -2578,7 +2577,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         haupt = tk.Frame(win2, padx=8, pady=8)
         haupt.pack(fill="both", expand=True)
         haupt.columnconfigure(0, weight=1)
-        haupt.columnconfigure(1, weight=1)
+        haupt.columnconfigure(1, weight=0)   # rechts: feste Breite, links dehnt sich
         haupt.rowconfigure(2, weight=1)
 
         # Info + Status (beide Spalten)
@@ -2769,6 +2768,10 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         rechts_frame.grid(row=0, column=1, rowspan=3, sticky="nsew")
         rechts_frame.columnconfigure(0, weight=1)
         rechts_frame.rowconfigure(2, weight=1)
+        _rechts_basis_w = [750]
+        rechts_frame.config(width=_rechts_basis_w[0])
+        rechts_frame.grid_propagate(False)
+        win2.after(400, lambda: _rechts_basis_w.__setitem__(0, rechts_frame.winfo_width()))
 
         tk.Label(rechts_frame, text="Schrittweise Ausführen",
                  anchor="w", font=("Segoe UI", 9, "bold"),
@@ -2827,12 +2830,12 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         # ── Schrittweise: Auto-Resize win2 je nach TV-Inhalt ────────────────────
         def _schr_auto_breite():
-            """Misst längste Zeile im Schrittfenster und weitet win2 aus –
-            bei Platzmangel rechts wird das Fenster nach links verschoben."""
+            """Misst längste Zeile und weitet rechts_frame innerhalb win2 aus.
+            win2 selbst bleibt unverändert in Position und Größe."""
             try:
                 import tkinter.font as _tkf
                 _fnt = _tkf.Font(family="Consolas", size=10, weight="bold")
-                _max_w = 600
+                _max_w = 400
                 def _mess(iid, tiefe=0):
                     nonlocal _max_w
                     txt = _schr_tv2.item(iid, "text")
@@ -2843,39 +2846,26 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                         _mess(ch, tiefe + 1)
                 for _top in _schr_tv2.get_children():
                     _mess(_top)
-                _max_w = min(_max_w + 40, 2400)   # Scrollbar + Cap
-                _schr_tv2.column("#0", width=_max_w, minwidth=300)
-                _lks_w = links_frame.winfo_width()
-                _needed = _lks_w + _max_w + 28    # Border + Scrollbar
-                if _needed > win2.winfo_width():
-                    _scr_w  = win2.winfo_screenwidth()
-                    _cur_x  = win2.winfo_x()
-                    _cur_y  = win2.winfo_y()
-                    _cur_h  = win2.winfo_height()
-                    # Passt das Fenster rechts noch auf den Bildschirm?
-                    if _cur_x + _needed > _scr_w:
-                        # Nach links verschieben, aber nicht über linken Rand
-                        _new_x = max(0, _scr_w - _needed)
-                    else:
-                        _new_x = _cur_x
-                    win2.geometry(
-                        f"{_needed}x{_cur_h}+{_new_x}+{_cur_y}")
+                # TV-Spalte auf gemessene Breite setzen
+                _col_w = min(_max_w + 24, 2000)
+                _schr_tv2.column("#0", width=_col_w, minwidth=300)
+                # rechts_frame nur ausweiten wenn nötig, nie über Fensterhälfte
+                _frame_w = _col_w + 28          # Scrollbar + Rand
+                _win_w   = win2.winfo_width()
+                _min_lks = 380                   # linkes Panel min. 380px
+                _max_rechts = max(_rechts_basis_w[0],
+                                  _win_w - _min_lks - 16)
+                _frame_w = min(_frame_w, _max_rechts)
+                if _frame_w > rechts_frame.winfo_width():
+                    rechts_frame.config(width=_frame_w)
             except Exception:
                 pass
 
         def _schr_reset_breite():
-            """Setzt win2 auf Basis-Breite zurück (neue Gruppe gewählt)."""
+            """Setzt rechts_frame auf Basis-Breite zurück (neue Gruppe)."""
             try:
                 _schr_tv2.column("#0", width=900, minwidth=300)
-                _bw = _win2_base_w[0]
-                if _bw > 0 and win2.winfo_width() > _bw:
-                    _scr_w = win2.winfo_screenwidth()
-                    _cur_x = win2.winfo_x()
-                    _cur_y = win2.winfo_y()
-                    # x-Position so korrigieren, dass Fenster auf Schirm bleibt
-                    _new_x = min(_cur_x, max(0, _scr_w - _bw))
-                    win2.geometry(
-                        f"{_bw}x{win2.winfo_height()}+{_new_x}+{_cur_y}")
+                rechts_frame.config(width=_rechts_basis_w[0])
             except Exception:
                 pass
 
