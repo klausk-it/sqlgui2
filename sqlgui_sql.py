@@ -2950,6 +2950,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                    for r1, d1, r2, d2, ol_s, ol_e, cnt in overlaps]
             schritte.append({"titel": "Ergebnis",
                              "spalten": sp5, "zeilen": z5,
+                             "gruppiert": True,   # A-Zeile + eingerückte B-Zeilen
                              "status": f"Schritt 5: {len(z5)} Überschneidung(en)"})
             return schritte
 
@@ -2957,19 +2958,50 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             """Hängt einen Schritt als flache Root-Zeilen ans TV an –
             kein Einzug, kein Klappmechanismus, alles bündig links."""
             sep = " │ "
+            ist_letzter = (idx == n_ges - 1)
             titel = (f"═══  Schritt {idx+1}/{n_ges}: {s['titel']}"
                      f"  ({len(s['zeilen'])} Einträge)  ═══")
-            # Alle Zeilen auf Root-Ebene → kein Treeview-Einzug
             _schr_tv2.insert("", "end", text=titel, tags=("step_hdr",))
-            _schr_tv2.insert("", "end",
-                text=sep.join(s["spalten"]), tags=("col_hdr",))
-            for row in s["zeilen"]:
-                is_ja = (len(row) > 4 and str(row[4]) == "Ja")
-                tag   = ("daten_ja",) if is_ja else ("daten",)
+            spalten = s["spalten"]
+            zeilen  = s["zeilen"]
+            if s.get("gruppiert"):
+                # Ergebnis-Schritt: A als Kopfzeile, B eingerückt
+                # Spaltenköpfe nur für A-Teil und B-Teil getrennt
+                sp_a = spalten[:2]   # Zeile A, Eintrag A
+                sp_b = spalten[2:]   # Zeile B, Eintrag B, Überschn. Start/Ende, Anzahl
                 _schr_tv2.insert("", "end",
-                    text=sep.join(str(v) for v in row), tags=tag)
-            # Leerzeile als Trenner zwischen Schritten
+                    text=sep.join(sp_a), tags=("col_hdr",))
+                _prev_a = None
+                for row in zeilen:
+                    a_key = (row[0], row[1])
+                    if a_key != _prev_a:
+                        # A-Kopfzeile (fett)
+                        _schr_tv2.insert("", "end",
+                            text=sep.join(str(v) for v in row[:2]),
+                            tags=("daten",))
+                        # Spaltenköpfe für B-Teil
+                        _schr_tv2.insert("", "end",
+                            text="      " + sep.join(sp_b),
+                            tags=("col_hdr",))
+                        _prev_a = a_key
+                    # B-Zeile eingerückt
+                    is_ja = False   # Ergebnis hat keine Ja/Nein-Spalte
+                    _schr_tv2.insert("", "end",
+                        text="      " + sep.join(str(v) for v in row[2:]),
+                        tags=("daten",))
+            else:
+                _schr_tv2.insert("", "end",
+                    text=sep.join(spalten), tags=("col_hdr",))
+                for row in zeilen:
+                    is_ja = (len(row) > 4 and str(row[4]) == "Ja")
+                    tag   = ("daten_ja",) if is_ja else ("daten",)
+                    _schr_tv2.insert("", "end",
+                        text=sep.join(str(v) for v in row), tags=tag)
+            # Trenner: leer + (letzter Schritt → 10 Leerzeilen zum Scrollen)
             _schr_tv2.insert("", "end", text="", tags=("daten",))
+            if ist_letzter:
+                for _ in range(10):
+                    _schr_tv2.insert("", "end", text="", tags=("daten",))
 
         def _schr2_laden(gw_val):
             """Startet kumulativen Trace: zeigt Schritt 1."""
