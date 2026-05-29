@@ -2809,12 +2809,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                                   selectmode="browse")
         _schr_tv2.column("#0", width=900, minwidth=300, stretch=True)
         _schr_tv2.heading("#0", text="")
-        try:
-            _schr_tv2.tk.call("ttk::style", "configure",
-                              "SchrittTV.Treeview", "-indent", "8")
-            _schr_tv2.configure(style="SchrittTV.Treeview")
-        except Exception:
-            pass
+
         _schr_sy2 = ttk.Scrollbar(_schr_tv_frm, orient="vertical",
                                    command=_schr_tv2.yview)
         _schr_sx2 = ttk.Scrollbar(_schr_tv_frm, orient="horizontal",
@@ -2959,21 +2954,22 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             return schritte
 
         def _schr2_step_anhaengen(s, idx, n_ges):
-            """Hängt einen Schritt als aufgeklappten Baum-Knoten ans TV an."""
+            """Hängt einen Schritt als flache Root-Zeilen ans TV an –
+            kein Einzug, kein Klappmechanismus, alles bündig links."""
             sep = " │ "
             titel = (f"═══  Schritt {idx+1}/{n_ges}: {s['titel']}"
                      f"  ({len(s['zeilen'])} Einträge)  ═══")
-            par = _schr_tv2.insert("", "end", text=titel,
-                                   open=True, tags=("step_hdr",))
-            # Spaltennamen
-            _schr_tv2.insert(par, "end",
+            # Alle Zeilen auf Root-Ebene → kein Treeview-Einzug
+            _schr_tv2.insert("", "end", text=titel, tags=("step_hdr",))
+            _schr_tv2.insert("", "end",
                 text=sep.join(s["spalten"]), tags=("col_hdr",))
-            # Datenzeilen
             for row in s["zeilen"]:
                 is_ja = (len(row) > 4 and str(row[4]) == "Ja")
                 tag   = ("daten_ja",) if is_ja else ("daten",)
-                _schr_tv2.insert(par, "end",
+                _schr_tv2.insert("", "end",
                     text=sep.join(str(v) for v in row), tags=tag)
+            # Leerzeile als Trenner zwischen Schritten
+            _schr_tv2.insert("", "end", text="", tags=("daten",))
 
         def _schr2_laden(gw_val):
             """Startet kumulativen Trace: zeigt Schritt 1."""
