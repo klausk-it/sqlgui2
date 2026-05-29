@@ -3014,12 +3014,13 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                     _schr_tv2.insert("", "end", text="", tags=("daten",))
 
         def _schr2_laden(gw_val):
-            """Startet kumulativen Trace: zeigt Schritt 1."""
+            """Lädt eine Gruppe: führt sofort alle Schritte aus und scrollt ans Ende.
+            Einzelschritt ► setzt danach auf Schritt 1 zurück (Schritt-für-Schritt-Modus)."""
             _schr_gw2[0]   = gw_val
             _schr_idx2[0]  = 0
-            _schr_mode2[0] = "kum"
+            _schr_mode2[0] = "alle"
             _schr_tv2.delete(*_schr_tv2.get_children())
-            _schr_reset_breite()          # Fenster auf Basis-Breite
+            _schr_reset_breite()
             if not gw_val:
                 _schr_status2.config(text="← Gruppe auswählen")
                 _schr_lbl2.config(text="—")
@@ -3029,26 +3030,46 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             schritte = _schr2_build_steps(gw_val)
             _schr_rows2[0] = schritte
             n = len(schritte)
-            _schr2_step_anhaengen(schritte[0], 0, n)
-            _schr_lbl2.config(
-                text=f"Schritt 1/{n}: {schritte[0]['titel']}")
-            _schr_status2.config(text=schritte[0]["status"])
+            for i, s in enumerate(schritte):
+                _schr2_step_anhaengen(s, i, n)
+            _schr_idx2[0] = n - 1
+            alle_kinder = _schr_tv2.get_children()
+            if alle_kinder:
+                _schr_tv2.see(alle_kinder[-1])
+            _schr_lbl2.config(text=f"Alle {n} Schritte")
+            _schr_status2.config(
+                text=f"Alle {n} Schritte  (Gruppe: {gw_val})")
             _btn_einzel_z.config(state="disabled")
-            _btn_einzel_w.config(state="normal" if n > 1 else "disabled")
+            _btn_einzel_w.config(
+                state="normal" if n > 0 else "disabled",
+                text="◄ Schritt 1")
             win2.after(120, _schr_auto_breite)
 
         def _schr2_einzelschritt(richtung):
-            """Hängt den nächsten Schritt an (vorwärts); kein Rückwärts."""
+            """Vorwärts: wenn alle Schritte gezeigt → Reset auf Schritt 1 (Schritt-für-Schritt).
+            Danach: jeweils nächsten Schritt anhängen."""
             schritte = _schr_rows2[0]
             if not schritte or richtung < 0:
                 return
-            next_idx = _schr_idx2[0] + 1
-            if next_idx >= len(schritte):
-                return
-            _schr_idx2[0] = next_idx
             n = len(schritte)
+            # Wenn alle Schritte sichtbar → zurücksetzen auf Schritt 1
+            if _schr_idx2[0] >= n - 1:
+                _schr_tv2.delete(*_schr_tv2.get_children())
+                _schr_idx2[0] = 0
+                _schr_mode2[0] = "kum"
+                _schr2_step_anhaengen(schritte[0], 0, n)
+                _schr_lbl2.config(
+                    text=f"Schritt 1/{n}: {schritte[0]['titel']}")
+                _schr_status2.config(text=schritte[0]["status"])
+                _btn_einzel_w.config(
+                    state="normal" if n > 1 else "disabled",
+                    text="Einzelschritt ►")
+                win2.after(120, _schr_auto_breite)
+                return
+            # Normal: nächsten Schritt anhängen
+            next_idx = _schr_idx2[0] + 1
+            _schr_idx2[0] = next_idx
             _schr2_step_anhaengen(schritte[next_idx], next_idx, n)
-            # Zum neuen Knoten scrollen
             alle_kinder = _schr_tv2.get_children()
             if alle_kinder:
                 _schr_tv2.see(alle_kinder[-1])
@@ -3057,7 +3078,8 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             _schr_status2.config(text=schritte[next_idx]["status"])
             _btn_einzel_z.config(state="disabled")
             _btn_einzel_w.config(
-                state="normal" if next_idx < n-1 else "disabled")
+                state="normal",
+                text="◄ Schritt 1" if next_idx >= n-1 else "Einzelschritt ►")
             win2.after(120, _schr_auto_breite)
 
         def _schr2_alle():
