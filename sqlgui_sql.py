@@ -2943,14 +2943,20 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                              "status": (f"Schritt 4: {len(z4)} Vergleiche, "
                                         f"{n_ja} Überschneidung(en)")})
 
-            # Schritt 5: Ergebnis
-            sp5 = ["Zeile A", "Eintrag A", "Zeile B", "Eintrag B",
+            # Schritt 5: Ergebnis (mit Anzeigenamen + Gruppenname)
+            _grp_nm5 = _gw_zu_name.get(gw_s, "")
+            sp5 = ["Zeile A", "Eintrag A", "Anzeigename A",
+                   "Zeile B", "Eintrag B", "Anzeigename B",
                    "Überschn. Start", "Überschn. Ende", "Anzahl IPs"]
-            z5  = [(str(r1), d1, str(r2), d2, ol_s, ol_e, str(cnt))
+            z5  = [(str(r1), d1, _zn_zu_disp.get(r1, ""),
+                    str(r2), d2, _zn_zu_disp.get(r2, ""),
+                    ol_s, ol_e, str(cnt))
                    for r1, d1, r2, d2, ol_s, ol_e, cnt in overlaps]
             schritte.append({"titel": "Ergebnis",
                              "spalten": sp5, "zeilen": z5,
-                             "gruppiert": True,   # A-Zeile + eingerückte B-Zeilen
+                             "gruppiert": True,
+                             "gw_id":   gw_s,
+                             "gw_name": _grp_nm5,
                              "status": f"Schritt 5: {len(z5)} Überschneidung(en)"})
             return schritte
 
@@ -2965,29 +2971,33 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             spalten = s["spalten"]
             zeilen  = s["zeilen"]
             if s.get("gruppiert"):
-                # Ergebnis-Schritt: A als Kopfzeile, B eingerückt
-                # Spaltenköpfe nur für A-Teil und B-Teil getrennt
-                sp_a = spalten[:2]   # Zeile A, Eintrag A
-                sp_b = spalten[2:]   # Zeile B, Eintrag B, Überschn. Start/Ende, Anzahl
-                _schr_tv2.insert("", "end",
-                    text=sep.join(sp_a), tags=("col_hdr",))
+                # Ergebnis-Schritt: Gruppe oben, A als Kopfzeile, B eingerückt
+                # Spalten: [ZeileA, EintragA, AnzA, ZeileB, EintragB, AnzB, olS, olE, cnt]
+                gw_id   = s.get("gw_id", "")
+                gw_name = s.get("gw_name", "")
+                _grp_hdr = f"Gruppe: {gw_id}"
+                if gw_name:
+                    _grp_hdr += f"  –  {gw_name}"
+                _schr_tv2.insert("", "end", text=_grp_hdr, tags=("step_hdr",))
+                sp_a = spalten[:3]   # Zeile A, Eintrag A, Anzeigename A
+                sp_b = spalten[3:]   # Zeile B, Eintrag B, Anzeigename B, Überschn...
                 _prev_a = None
                 for row in zeilen:
                     a_key = (row[0], row[1])
                     if a_key != _prev_a:
-                        # A-Kopfzeile (fett)
+                        # A-Spaltenköpfe + A-Datenzeile
                         _schr_tv2.insert("", "end",
-                            text=sep.join(str(v) for v in row[:2]),
+                            text=sep.join(sp_a), tags=("col_hdr",))
+                        _schr_tv2.insert("", "end",
+                            text=sep.join(str(v) for v in row[:3]),
                             tags=("daten",))
-                        # Spaltenköpfe für B-Teil
+                        # B-Spaltenköpfe
                         _schr_tv2.insert("", "end",
-                            text="      " + sep.join(sp_b),
-                            tags=("col_hdr",))
+                            text="      " + sep.join(sp_b), tags=("col_hdr",))
                         _prev_a = a_key
-                    # B-Zeile eingerückt
-                    is_ja = False   # Ergebnis hat keine Ja/Nein-Spalte
+                    # B-Datenzeile eingerückt
                     _schr_tv2.insert("", "end",
-                        text="      " + sep.join(str(v) for v in row[2:]),
+                        text="      " + sep.join(str(v) for v in row[3:]),
                         tags=("daten",))
             else:
                 _schr_tv2.insert("", "end",
