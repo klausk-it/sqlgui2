@@ -2821,9 +2821,9 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         _schr_sx2.grid(row=2, column=0, sticky="ew")
         # Systemfarben bleiben — nur Schrift fett+groß für alle Farbmodi lesbar
         _schr_tv2.tag_configure("step_hdr",
-            font=("Segoe UI", 10, "bold"), foreground="#0000CC")
+            font=("Segoe UI", 10, "bold"))
         _schr_tv2.tag_configure("col_hdr",
-            font=("Consolas", 10, "bold"), foreground="#444444")
+            font=("Consolas", 9))
         _schr_tv2.tag_configure("daten",
             font=("Consolas", 10, "bold"))
         _schr_tv2.tag_configure("daten_ja",
@@ -3054,22 +3054,21 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             det = iid_zu_details.get(_eiid, [])
             gw  = iid_zu_gw.get(_eiid, g_tv.item(_eiid, "text"))
             d_tv.delete(*d_tv.get_children())
-            # A-Zeile normal, B-Zeile eingerückt mit ↳-Prefix (flache Liste)
-            from collections import OrderedDict as _OD
-            _a_gruppen = _OD()
+            # Erste Zeile pro A: vollständig (A + B); Folgezeilen: A leer = visueller Einzug
+            _prev_a = None
             for r1, d1, r2, d2, ol_s, ol_e, cnt in det:
-                _a_gruppen.setdefault((r1, d1), []).append((r2, d2, ol_s, ol_e, cnt))
-            for (r1, d1), kinder in _a_gruppen.items():
-                d_tv.insert("", "end",
-                            values=(r1, d1, "", "", "", "", ""),
-                            tags=("dtv_a",))
-                for r2, d2, ol_s, ol_e, cnt in kinder:
+                _ist_neu = (r1, d1) != _prev_a
+                if _ist_neu:
                     d_tv.insert("", "end",
-                                values=("", "", str(r2), "    " + d2, ol_s, ol_e, cnt),
-                                tags=("dtv_b",))
-            # dtv_a: keine explizite Farbe → passt sich dem Systemfarbmodus an
-            d_tv.tag_configure("dtv_a", font=("TkDefaultFont", 9, "bold"))
-            d_tv.tag_configure("dtv_b", foreground="#884400")
+                                values=(r1, d1, r2, d2, ol_s, ol_e, cnt),
+                                tags=("dtv_first",))
+                    _prev_a = (r1, d1)
+                else:
+                    d_tv.insert("", "end",
+                                values=("", "", r2, d2, ol_s, ol_e, cnt),
+                                tags=("dtv_cont",))
+            d_tv.tag_configure("dtv_first", font=("TkDefaultFont", 9, "bold"))
+            d_tv.tag_configure("dtv_cont",  foreground="#664400")
             if det:
                 tree_spalten_breiten_anpassen(d_tv)
             detail_lbl_var.set(
