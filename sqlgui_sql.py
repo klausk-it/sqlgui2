@@ -2737,9 +2737,9 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                      command=lambda: _tv_sortieren(d_tv, "z_a"))
         d_tv.heading("eintrag_a", text="Eintrag A",        anchor="w",
                      command=lambda: _tv_sortieren(d_tv, "eintrag_a"))
-        d_tv.heading("z_b",       text="↳ Zeile B",       anchor="w",
+        d_tv.heading("z_b",       text="Zeile B",         anchor="w",
                      command=lambda: _tv_sortieren(d_tv, "z_b"))
-        d_tv.heading("eintrag_b", text="↳ Eintrag B",     anchor="w",
+        d_tv.heading("eintrag_b", text="Eintrag B",        anchor="w",
                      command=lambda: _tv_sortieren(d_tv, "eintrag_b"))
         d_tv.heading("ol_start",  text="Überschn. Start", anchor="w",
                      command=lambda: _tv_sortieren(d_tv, "ol_start"))
@@ -3065,9 +3065,10 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                             tags=("dtv_a",))
                 for r2, d2, ol_s, ol_e, cnt in kinder:
                     d_tv.insert("", "end",
-                                values=("", "", "  ↳ " + str(r2), d2, ol_s, ol_e, cnt),
+                                values=("", "", str(r2), "    " + d2, ol_s, ol_e, cnt),
                                 tags=("dtv_b",))
-            d_tv.tag_configure("dtv_a", foreground="#000000", font=("TkDefaultFont", 9, "bold"))
+            # dtv_a: keine explizite Farbe → passt sich dem Systemfarbmodus an
+            d_tv.tag_configure("dtv_a", font=("TkDefaultFont", 9, "bold"))
             d_tv.tag_configure("dtv_b", foreground="#884400")
             if det:
                 tree_spalten_breiten_anpassen(d_tv)
