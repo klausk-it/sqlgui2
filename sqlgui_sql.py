@@ -2809,6 +2809,12 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                                   selectmode="browse")
         _schr_tv2.column("#0", width=900, minwidth=300, stretch=True)
         _schr_tv2.heading("#0", text="")
+        try:
+            _schr_tv2.tk.call("ttk::style", "configure",
+                              "SchrittTV.Treeview", "-indent", "8")
+            _schr_tv2.configure(style="SchrittTV.Treeview")
+        except Exception:
+            pass
         _schr_sy2 = ttk.Scrollbar(_schr_tv_frm, orient="vertical",
                                    command=_schr_tv2.yview)
         _schr_sx2 = ttk.Scrollbar(_schr_tv_frm, orient="horizontal",
@@ -2954,7 +2960,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         def _schr2_step_anhaengen(s, idx, n_ges):
             """Hängt einen Schritt als aufgeklappten Baum-Knoten ans TV an."""
-            sep = "  │  "
+            sep = " │ "
             titel = (f"═══  Schritt {idx+1}/{n_ges}: {s['titel']}"
                      f"  ({len(s['zeilen'])} Einträge)  ═══")
             par = _schr_tv2.insert("", "end", text=titel,
