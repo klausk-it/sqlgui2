@@ -2779,7 +2779,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                  padx=6, pady=4).grid(row=0, column=0, sticky="ew")
 
         _schr_btn_frm = tk.Frame(rechts_frame, padx=6)
-        _schr_btn_frm.grid(row=1, column=0, sticky="ew", pady=(0, 4))
+        _schr_btn_frm.grid(row=2, column=0, sticky="ew", pady=(0, 4))
 
         _schr_idx2  = [0]      # aktueller Zeilen-Index bei Einzelschritt
         _schr_gw2   = [None]   # aktuell angezeigte GroupID
@@ -2799,7 +2799,7 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
 
         # Zweite Button-Zeile: Alle Gruppen Ergebnis
         _schr_btn_frm2 = tk.Frame(rechts_frame, padx=6)
-        _schr_btn_frm2.grid(row=2, column=0, sticky="ew", pady=(0, 2))
+        _schr_btn_frm2.grid(row=1, column=0, sticky="ew", pady=(0, 2))
         _btn_alle_grp = tk.Button(_schr_btn_frm2,
             text="Alle Gruppen: Ergebnis (Schritt 5)",
             font=("Segoe UI", 8))
