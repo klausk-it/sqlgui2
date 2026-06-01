@@ -10117,6 +10117,8 @@ def sql_abfrage_fenster_oeffnen():
 
     # ── Rechtsklick Tabellen-/Felder-/Funktionsliste: extra SQL-Aktionen vorn ──
     def _tab_extra(m, iid, sp_name):
+        m.add_command(label="Aktualisieren  (F5)", command=tabellen_liste_fuellen)
+        m.add_separator()
         tname = tree_tab.item(iid, "values")[0] if iid else ""
         if tname:
             m.add_command(
@@ -10192,6 +10194,8 @@ def sql_abfrage_fenster_oeffnen():
     editor.bind("<Button-3>", editor_rechtsklick)
 
     tree_tab.bind("<<TreeviewSelect>>", tabellen_auswahl)
+    tree_tab.bind("<F5>", lambda e: tabellen_liste_fuellen())
+    top.bind("<F5>",     lambda e: tabellen_liste_fuellen())
     tree_saved.bind("<<TreeviewSelect>>", gespeicherte_auswahl_gewechselt)
     tree_saved.bind("<Button-3>", abfrage_rechtsklick)
     tree_projekte.bind("<<TreeviewSelect>>", projekt_auswahl_gewechselt)
