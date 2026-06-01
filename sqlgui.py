@@ -6287,6 +6287,8 @@ tree.configure(yscrollcommand=sy.set, xscrollcommand=sx.set)
 tree_tabellen.bind("<<TreeviewSelect>>", tabelle_links_ausgewaehlt)
 tree_tabellen.bind("<Double-1>", tabelle_doppelklick)
 tree_tabellen.bind("<Double-1>", tabelle_doppelklick)
+tree_tabellen.bind("<F5>", lambda e: tabellen_dropdown_aktualisieren())
+root.bind("<F5>",          lambda e: tabellen_dropdown_aktualisieren())
 
 menueleiste = tk.Menu(root)
 menudatei = tk.Menu(menueleiste, tearoff=0)
@@ -6303,6 +6305,9 @@ menudatei.add_command(label="Beenden", command=app_beenden)
 menueleiste.add_cascade(label="Datei", menu=menudatei)
 
 menutabelle = tk.Menu(menueleiste, tearoff=0)
+menutabelle.add_command(label="Tabellenliste aktualisieren  [F5]",
+                        command=lambda: tabellen_dropdown_aktualisieren())
+menutabelle.add_separator()
 menutabelle.add_command(label="Tabelle hinzufügen", command=tabelle_hinzufuegen)
 menutabelle.add_command(label="Tabelle umbenennen", command=tabelle_umbenennen)
 menutabelle.add_command(label="Tabelle in DB kopieren", command=tabelle_in_db_kopieren)
