@@ -8246,6 +8246,169 @@ def sql_abfrage_fenster_oeffnen():
         else:
             _relation_bearbeiten()
 
+
+    def _fk_aus_db_importieren():
+        """Liest PRAGMA foreign_key_list aller Tabellen und lässt den Nutzer
+        FK-Constraints als Beziehungen in zzz_Relationen importieren."""
+        import datetime as _dt
+        pname = _G_ausgewaehltes_projekt.get("name")
+        if not pname:
+            messagebox.showwarning("FK importieren", "Kein Projekt ausgewählt.", parent=top)
+            return
+        if not db_ist_geladen():
+            messagebox.showwarning("FK importieren", "Keine Datenbank geladen.", parent=top)
+            return
+        _relationen_tabelle_sicherstellen()
+
+        # ── 1. Alle FKs aus der DB lesen ──────────────────────────────────
+        try:
+            vb = sqlite_verbindung_oeffnen()
+            alle_tabellen = [r[0] for r in vb.execute(
+                "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+            ).fetchall()]
+            fks_gefunden = []   # (quell_tab, quell_feld, ziel_tab, ziel_feld)
+            for tab in alle_tabellen:
+                try:
+                    rows = vb.execute(f"PRAGMA foreign_key_list({sql_identifier(tab)})").fetchall()
+                    for r in rows:
+                        # r: id, seq, table, from, to, on_update, on_delete, match
+                        fks_gefunden.append((tab, r[3], r[2], r[4]))
+                except Exception:
+                    pass
+            # Bereits vorhandene Beziehungen für Duplikat-Markierung
+            bereits = set()
+            for row in vb.execute(
+                f"SELECT QuellTabelle, QuellFeld, ZielTabelle, ZielFeld "
+                f"FROM {sql_identifier(G_TABELLE_RELATIONEN_SQL)} WHERE Projekt=?",
+                (pname,)
+            ).fetchall():
+                bereits.add((row[0], row[1], row[2], row[3]))
+            vb.close()
+        except Exception as e:
+            messagebox.showerror("FK importieren", f"Fehler beim Lesen: {e}", parent=top)
+            return
+
+        if not fks_gefunden:
+            messagebox.showinfo("FK importieren",
+                "Keine FOREIGN KEY-Constraints in der Datenbank gefunden.\n\n"
+                "Hinweis: SQLite erzwingt FKs nur wenn 'PRAGMA foreign_keys=ON' gesetzt ist,\n"
+                "speichert aber die Definitionen in der CREATE TABLE-Anweisung.",
+                parent=top)
+            return
+
+        # ── 2. Dialog ─────────────────────────────────────────────────────
+        dlg = tk.Toplevel(top)
+        dlg.title("FK-Constraints als Beziehungen importieren")
+        dlg.geometry("780x460")
+        dlg.resizable(True, True)
+        dlg.grab_set()
+        dlg.transient(top)
+        dlg.columnconfigure(0, weight=1)
+        dlg.rowconfigure(1, weight=1)
+
+        # Info-Zeile
+        tk.Label(dlg,
+            text=f"Gefundene FK-Constraints  –  bereits vorhanden = grau  (Projekt: {pname})",
+            anchor="w", font=("Segoe UI", 9)
+        ).grid(row=0, column=0, sticky="ew", padx=10, pady=(8, 2))
+
+        # Treeview
+        tv_frm = tk.Frame(dlg)
+        tv_frm.grid(row=1, column=0, sticky="nsew", padx=10, pady=2)
+        tv_frm.columnconfigure(0, weight=1)
+        tv_frm.rowconfigure(0, weight=1)
+        tv = ttk.Treeview(tv_frm,
+            columns=("quell_tab", "quell_feld", "ziel_tab", "ziel_feld", "status"),
+            show="headings", selectmode="extended")
+        tv.heading("quell_tab",   text="Quell-Tabelle",  anchor="w")
+        tv.heading("quell_feld",  text="Quell-Feld",     anchor="w")
+        tv.heading("ziel_tab",    text="Ziel-Tabelle",   anchor="w")
+        tv.heading("ziel_feld",   text="Ziel-Feld",      anchor="w")
+        tv.heading("status",      text="Status",         anchor="w")
+        tv.column("quell_tab",  width=180, anchor="w")
+        tv.column("quell_feld", width=120, anchor="w")
+        tv.column("ziel_tab",   width=180, anchor="w")
+        tv.column("ziel_feld",  width=120, anchor="w")
+        tv.column("status",     width=100, anchor="w")
+        tv.tag_configure("vorhanden", foreground="#888888")
+        tv_sb = ttk.Scrollbar(tv_frm, orient="vertical", command=tv.yview)
+        tv_sb.grid(row=0, column=1, sticky="ns")
+        tv.grid(row=0, column=0, sticky="nsew")
+        tv.configure(yscrollcommand=tv_sb.set)
+
+        neu_iids = []
+        for i, (qt, qf, zt, zf) in enumerate(fks_gefunden):
+            ist_da = (qt, qf, zt, zf) in bereits
+            tag    = ("vorhanden",) if ist_da else ()
+            status = "bereits vorhanden" if ist_da else "neu"
+            iid = tv.insert("", "end", values=(qt, qf, zt, zf, status), tags=tag)
+            if not ist_da:
+                neu_iids.append(iid)
+
+        # Neue vorauswählen
+        if neu_iids:
+            tv.selection_set(neu_iids)
+
+        # Bezeichnung-Prefix
+        bez_frm = tk.Frame(dlg)
+        bez_frm.grid(row=2, column=0, sticky="ew", padx=10, pady=(4, 2))
+        tk.Label(bez_frm, text="Bezeichnung (optional, wird vor Tabellenpfad gestellt):").pack(side="left")
+        bez_var = tk.StringVar()
+        tk.Entry(bez_frm, textvariable=bez_var, width=30).pack(side="left", padx=(6, 0))
+
+        # Typ
+        typ_frm = tk.Frame(dlg)
+        typ_frm.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 4))
+        tk.Label(typ_frm, text="Typ:").pack(side="left")
+        typ_var = tk.StringVar(value="1:N")
+        for _t in ("1:1", "1:N", "N:M"):
+            tk.Radiobutton(typ_frm, text=_t, variable=typ_var, value=_t).pack(side="left", padx=4)
+
+        # Buttons
+        btn_frm = tk.Frame(dlg)
+        btn_frm.grid(row=4, column=0, sticky="ew", padx=10, pady=(0, 10))
+
+        def _alle_neu_auswaehlen():
+            tv.selection_set(neu_iids)
+
+        def _importieren():
+            auswahl = tv.selection()
+            if not auswahl:
+                messagebox.showwarning("FK importieren", "Keine Einträge ausgewählt.", parent=dlg)
+                return
+            try:
+                vb = sqlite_verbindung_oeffnen()
+                now = _dt.datetime.now().isoformat(sep=" ", timespec="seconds")
+                bez_prefix = bez_var.get().strip()
+                typ = typ_var.get()
+                n = 0
+                for iid in auswahl:
+                    vals = tv.item(iid, "values")
+                    qt, qf, zt, zf = vals[0], vals[1], vals[2], vals[3]
+                    bez = (f"{bez_prefix}: " if bez_prefix else "") + f"{qt}.{qf} → {zt}.{zf}"
+                    vb.execute(
+                        f"INSERT INTO {sql_identifier(G_TABELLE_RELATIONEN_SQL)} "
+                        f"(datetime, Projekt, Bezeichnung, QuellTabelle, QuellFeld, "
+                        f" ZielTabelle, ZielFeld, Typ) VALUES (?,?,?,?,?,?,?,?)",
+                        (now, pname, bez, qt, qf, zt, zf, typ)
+                    )
+                    n += 1
+                vb.commit()
+                vb.close()
+            except Exception as e:
+                messagebox.showerror("FK importieren", f"Fehler beim Speichern: {e}", parent=dlg)
+                return
+            _relationen_liste_aktualisieren()
+            dlg.destroy()
+            messagebox.showinfo("FK importieren",
+                f"{n} Beziehung(en) importiert.", parent=top)
+
+        tk.Button(btn_frm, text="Alle Neuen auswählen", command=_alle_neu_auswaehlen).pack(side="left", padx=(0,8))
+        tk.Button(btn_frm, text="Importieren", command=_importieren,
+                  font=("Segoe UI", 9, "bold")).pack(side="left")
+        tk.Button(btn_frm, text="Abbrechen", command=dlg.destroy).pack(side="right")
+
+
     def _rel_tree_rechtsklick(event):
         item_id = rel_tree.identify_row(event.y)
         if item_id:
@@ -8253,6 +8416,7 @@ def sql_abfrage_fenster_oeffnen():
         menu = tk.Menu(top, tearoff=0)
         menu.add_command(label="Einfache Beziehung hinzufügen",  command=_relation_hinzufuegen)
         menu.add_command(label="Kettenbeziehung hinzufügen",      command=_kettenbeziehung_dialog)
+        menu.add_command(label="FK aus DB importieren …",          command=_fk_aus_db_importieren)
         menu.add_separator()
         menu.add_command(label="▲  Nach oben",                    command=lambda: _relation_verschieben(-1))
         menu.add_command(label="▼  Nach unten",                   command=lambda: _relation_verschieben(+1))
