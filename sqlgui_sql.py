@@ -5005,8 +5005,9 @@ def _relation_fuer_neue_tabelle_anbieten(parent, tabellenname, spalten):
     antwort = messagebox.askyesno(
         "Beziehungen definieren",
         f"Tabelle '{tabellenname}' wurde gespeichert.\n\n"
-        f"Möchten Sie jetzt Beziehungen (Foreign Keys) für diese Tabelle\n"
-        f"in zzz_Relationen eintragen?",
+        f"Möchten Sie jetzt FOREIGN KEY-Constraints für diese Tabelle\n"
+        f"in der CREATE TABLE-Definition hinterlegen?\n\n"
+        f"(PRAGMA foreign_key_list wird danach die FKs zurückgeben)",
         parent=parent)
     if not antwort:
         return
@@ -5021,7 +5022,7 @@ def _relation_fuer_neue_tabelle_anbieten(parent, tabellenname, spalten):
     dlg.columnconfigure(0, weight=1)
     dlg.rowconfigure(2, weight=1)
 
-    tk.Label(dlg, text=f"Tabelle: {tabellenname}   (projektneutral – Projekt kann später zugewiesen werden)",
+    tk.Label(dlg, text=f"Tabelle: {tabellenname}   –   FK-Constraints werden in die CREATE TABLE-Definition eingebaut",
              font=("Segoe UI", 9, "bold"), anchor="w").grid(
         row=0, column=0, sticky="ew", padx=10, pady=(8, 4))
 
@@ -5115,25 +5116,57 @@ def _relation_fuer_neue_tabelle_anbieten(parent, tabellenname, spalten):
         if not liste:
             dlg.destroy()
             return
+        # ── Tabelle mit echten FK-Constraints neu erstellen ───────────────
+        # SQLite unterstützt kein ALTER TABLE ADD FOREIGN KEY →
+        # Tabelle neu bauen: Daten sichern, DROP, CREATE mit FKs, re-INSERT
         try:
             vb = sqlite_verbindung_oeffnen()
-            now = _dt.datetime.now().isoformat(sep=" ", timespec="seconds")
-            for qf, zt, zf, typ, bez in liste:
-                vb.execute(
-                    "INSERT INTO zzz_Relationen "
-                    "(datetime, Projekt, Bezeichnung, QuellTabelle, QuellFeld, ZielTabelle, ZielFeld, Typ) "
-                    "VALUES (?,?,?,?,?,?,?,?)",
-                    (now, "", bez, tabellenname, qf, zt, zf, typ)
+            # 1. Spaltennamen + Typen aus PRAGMA table_info
+            info = vb.execute(
+                f"PRAGMA table_info({sql_identifier(tabellenname)})"
+            ).fetchall()
+            # info: cid, name, type, notnull, dflt_value, pk
+            col_defs = []
+            for ci in info:
+                cname = ci[1]
+                ctype = ci[2] if ci[2] else "TEXT"
+                col_defs.append(f"{sql_identifier(cname)} {ctype}")
+            # 2. FK-Constraints anhängen
+            for qf, zt, zf, _typ, _bez in liste:
+                col_defs.append(
+                    f"FOREIGN KEY ({sql_identifier(qf)}) "
+                    f"REFERENCES {sql_identifier(zt)}({sql_identifier(zf)})"
                 )
+            # 3. Daten retten
+            alle_zeilen = vb.execute(
+                f"SELECT * FROM {sql_identifier(tabellenname)}"
+            ).fetchall()
+            col_namen = [ci[1] for ci in info]
+            # 4. Tabelle neu erstellen
+            tmp = f"_tmp_fk_{tabellenname}"
+            vb.execute(f"DROP TABLE IF EXISTS {sql_identifier(tmp)}")
+            vb.execute(
+                f"CREATE TABLE {sql_identifier(tmp)} ({', '.join(col_defs)})"
+            )
+            if alle_zeilen:
+                platz = ", ".join(["?"] * len(col_namen))
+                vb.executemany(
+                    f"INSERT INTO {sql_identifier(tmp)} VALUES ({platz})",
+                    alle_zeilen
+                )
+            vb.execute(f"DROP TABLE {sql_identifier(tabellenname)}")
+            vb.execute(
+                f"ALTER TABLE {sql_identifier(tmp)} RENAME TO {sql_identifier(tabellenname)}"
+            )
             vb.commit()
             vb.close()
         except Exception as e:
-            messagebox.showerror("Beziehungen speichern", f"Fehler: {e}", parent=dlg)
+            messagebox.showerror("FK speichern", f"Fehler beim Neuerstellen der Tabelle:\n{e}", parent=dlg)
             return
         dlg.destroy()
-        messagebox.showinfo("Beziehungen gespeichert",
-            f"{len(liste)} Beziehung(en) für '{tabellenname}' eingetragen.\n"
-            f"(projektneutral gespeichert – Projekt kann über die Relationenliste zugewiesen werden)",
+        messagebox.showinfo("FK-Constraints gespeichert",
+            f"{len(liste)} FOREIGN KEY-Constraint(s) in '{tabellenname}' eingetragen.\n"
+            f"PRAGMA foreign_key_list({tabellenname}) gibt sie jetzt zurück.",
             parent=parent)
 
     btn_frm = tk.Frame(dlg)
