@@ -5105,28 +5105,47 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
     _ddl_setzen(ddl)
 
     # ── Eingabezeile: neuen FK ─────────────────────────────────────────────
-    # ── Primary Key ───────────────────────────────────────────────────────
-    pk_frm = tk.LabelFrame(dlg, text="Primary Key", padx=6, pady=4)
+    # ── Primary Key (Mehrfachauswahl für zusammengesetzten PK) ───────────
+    pk_frm = tk.LabelFrame(dlg, text="Primary Key  (Strg+Klick für mehrere Spalten)", padx=6, pady=4)
     pk_frm.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 4))
     pk_frm.columnconfigure(1, weight=1)
 
-    # Aktuell gesetzter PK aus PRAGMA table_info (Spalte 5 = pk-Rang)
     _pk_aktuell = [r[1] for r in col_info if r[5]]
     pk_var = tk.StringVar(value=", ".join(_pk_aktuell) if _pk_aktuell else "(keiner)")
-    tk.Label(pk_frm, text="Aktuell:").grid(row=0, column=0, sticky="w", padx=(0,6))
+    tk.Label(pk_frm, text="Aktuell:").grid(row=0, column=0, sticky="nw", padx=(0,6))
     tk.Label(pk_frm, textvariable=pk_var, anchor="w", foreground="#0055AA",
              font=("Consolas", 9, "bold")).grid(row=0, column=1, sticky="w")
 
-    tk.Label(pk_frm, text="Neu setzen:").grid(row=1, column=0, sticky="w", padx=(0,6), pady=(4,0))
-    pk_neu_var = tk.StringVar()
-    pk_neu_cb  = ttk.Combobox(pk_frm, textvariable=pk_neu_var,
-                               values=["(keiner)"] + col_namen, width=24, state="readonly")
-    pk_neu_cb.set("(keiner)" if not _pk_aktuell else _pk_aktuell[0])
-    pk_neu_cb.grid(row=1, column=1, sticky="w", pady=(4,0))
+    tk.Label(pk_frm, text="Neu setzen:").grid(row=1, column=0, sticky="nw", padx=(0,6), pady=(4,2))
+    pk_lb_frm = tk.Frame(pk_frm)
+    pk_lb_frm.grid(row=1, column=1, sticky="w", pady=(4,2))
+    pk_lb = tk.Listbox(pk_lb_frm, selectmode="multiple", exportselection=False,
+                       height=min(len(col_namen), 4), width=28,
+                       font=("Consolas", 9))
+    pk_lb_sb = ttk.Scrollbar(pk_lb_frm, orient="vertical", command=pk_lb.yview)
+    pk_lb.configure(yscrollcommand=pk_lb_sb.set)
+    pk_lb.pack(side="left")
+    pk_lb_sb.pack(side="left", fill="y")
+    for cn in col_namen:
+        pk_lb.insert("end", cn)
+    # Aktuelle PK-Spalten vorauswählen
+    for i, cn in enumerate(col_namen):
+        if cn in _pk_aktuell:
+            pk_lb.selection_set(i)
     tk.Label(pk_frm,
-             text="  ← Spalte auswählen und 'Tabelle neu erstellen' klicken",
+             text="  ← Spalten markieren, dann 'Tabelle neu erstellen'",
              foreground="#666666", font=("Segoe UI", 8)
     ).grid(row=1, column=2, sticky="w", padx=6)
+
+    def _pk_cols_neu_lesen():
+        return [col_namen[i] for i in pk_lb.curselection()]
+
+    # Hilfsfunktion statt pk_neu_cb (für Post-Save-Update)
+    def _pk_neu_cb_set(wert):
+        pk_lb.selection_clear(0, "end")
+        for i, cn in enumerate(col_namen):
+            if cn in wert.split(", "):
+                pk_lb.selection_set(i)
 
     ein_frm = tk.LabelFrame(dlg, text="Neuen FK hinzufügen", padx=6, pady=4)
     ein_frm.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 4))
@@ -5219,9 +5238,8 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
             ).fetchall()
             # Spaltendefinitionen
             col_defs = []
-            # PK: aus Dialog-Auswahl (pk_neu_var) übernehmen
-            pk_wahl = pk_neu_var.get().strip()
-            pk_cols_neu = [pk_wahl] if pk_wahl and pk_wahl != "(keiner)" else []
+            # PK: aus Listbox-Mehrfachauswahl
+            pk_cols_neu = _pk_cols_neu_lesen()
             for ci in ci_fresh:
                 cname = ci[1]
                 ctype = ci[2] if ci[2] else "TEXT"
@@ -5259,8 +5277,17 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
             vb.commit()
             vb.close()
         except Exception as e:
-            hinweis = ("\n\nBitte alle offenen Tabellenfenster für diese Tabelle\n"
-                       "schließen und erneut versuchen.") if "locked" in str(e).lower() else ""
+            _e = str(e).lower()
+            if "locked" in _e:
+                hinweis = ("\n\nBitte alle offenen Tabellenfenster für diese Tabelle\n"
+                           "schließen und erneut versuchen.")
+            elif "unique" in _e:
+                hinweis = ("\n\nDie gewählten PK-Spalten enthalten doppelte Werte\n"
+                           "und eignen sich nicht als Primary Key.\n"
+                           "Bei Verknüpfungstabellen bitte alle beteiligten Spalten\n"
+                           "zusammen als zusammengesetzten PK auswählen (Strg+Klick).")
+            else:
+                hinweis = ""
             messagebox.showerror("FK speichern",
                 f"Fehler beim Neuerstellen:\n{e}{hinweis}", parent=dlg)
             return
@@ -5277,7 +5304,7 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
         ).fetchall() if r[5]]
         _vb_pk.close()
         pk_var.set(", ".join(_pk_frisch) if _pk_frisch else "(keiner)")
-        pk_neu_cb.set(pk_var.get())
+        _pk_neu_cb_set(pk_var.get())
         messagebox.showinfo("FK gespeichert",
             f"Tabelle '{tabellenname}' neu erstellt.\n"
             f"{n_zeilen} Datensätze erhalten.\n"
