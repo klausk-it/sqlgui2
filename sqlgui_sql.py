@@ -5057,10 +5057,49 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
     ddl_txt.grid(row=0, column=0, sticky="ew")
     ddl_sb_x.grid(row=1, column=0, sticky="ew")
 
+    def _ddl_formatieren(ddl):
+        """Formatiert eine CREATE TABLE DDL leserlich mit Einrückung."""
+        if not ddl:
+            return ddl
+        ddl = ddl.strip()
+        # Kopfzeile (bis zur ersten öffnenden Klammer)
+        klammer = ddl.find("(")
+        if klammer < 0:
+            return ddl
+        kopf  = ddl[:klammer].rstrip()
+        inhalt = ddl[klammer+1:].rstrip()
+        if inhalt.endswith(")"):
+            inhalt = inhalt[:-1]
+        # Aufteilen nach Kommas – aber nur auf oberster Ebene
+        teile = []
+        tiefe = 0
+        aktuell = []
+        for ch in inhalt:
+            if ch == "(":
+                tiefe += 1
+                aktuell.append(ch)
+            elif ch == ")":
+                tiefe -= 1
+                aktuell.append(ch)
+            elif ch == "," and tiefe == 0:
+                teile.append("".join(aktuell).strip())
+                aktuell = []
+            else:
+                aktuell.append(ch)
+        if aktuell:
+            teile.append("".join(aktuell).strip())
+        einrueckung = "    "
+        zeilen = [kopf + " ("]
+        for i, teil in enumerate(teile):
+            komma = "," if i < len(teile) - 1 else ""
+            zeilen.append(f"{einrueckung}{teil}{komma}")
+        zeilen.append(")")
+        return "\n".join(zeilen)
+
     def _ddl_setzen(text):
         ddl_txt.config(state="normal")
         ddl_txt.delete("1.0", "end")
-        ddl_txt.insert("end", text)
+        ddl_txt.insert("end", _ddl_formatieren(text))
         ddl_txt.config(state="disabled")
 
     _ddl_setzen(ddl)
