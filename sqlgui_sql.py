@@ -5036,8 +5036,9 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
     dlg.transient(parent)
     dlg.columnconfigure(0, weight=1)
     dlg.rowconfigure(1, weight=0)   # DDL
-    dlg.rowconfigure(2, weight=0)   # Eingabe
-    dlg.rowconfigure(3, weight=1)   # FK-Liste
+    dlg.rowconfigure(2, weight=0)   # Primary Key
+    dlg.rowconfigure(3, weight=0)   # Neuen FK hinzufügen
+    dlg.rowconfigure(4, weight=1)   # FK-Liste
 
     # ── Kopfzeile ─────────────────────────────────────────────────────────
     tk.Label(dlg,
@@ -5065,8 +5066,31 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
     _ddl_setzen(ddl)
 
     # ── Eingabezeile: neuen FK ─────────────────────────────────────────────
+    # ── Primary Key ───────────────────────────────────────────────────────
+    pk_frm = tk.LabelFrame(dlg, text="Primary Key", padx=6, pady=4)
+    pk_frm.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 4))
+    pk_frm.columnconfigure(1, weight=1)
+
+    # Aktuell gesetzter PK aus PRAGMA table_info (Spalte 5 = pk-Rang)
+    _pk_aktuell = [r[1] for r in col_info if r[5]]
+    pk_var = tk.StringVar(value=", ".join(_pk_aktuell) if _pk_aktuell else "(keiner)")
+    tk.Label(pk_frm, text="Aktuell:").grid(row=0, column=0, sticky="w", padx=(0,6))
+    tk.Label(pk_frm, textvariable=pk_var, anchor="w", foreground="#0055AA",
+             font=("Consolas", 9, "bold")).grid(row=0, column=1, sticky="w")
+
+    tk.Label(pk_frm, text="Neu setzen:").grid(row=1, column=0, sticky="w", padx=(0,6), pady=(4,0))
+    pk_neu_var = tk.StringVar()
+    pk_neu_cb  = ttk.Combobox(pk_frm, textvariable=pk_neu_var,
+                               values=["(keiner)"] + col_namen, width=24, state="readonly")
+    pk_neu_cb.set("(keiner)" if not _pk_aktuell else _pk_aktuell[0])
+    pk_neu_cb.grid(row=1, column=1, sticky="w", pady=(4,0))
+    tk.Label(pk_frm,
+             text="  ← Spalte auswählen und 'Tabelle neu erstellen' klicken",
+             foreground="#666666", font=("Segoe UI", 8)
+    ).grid(row=1, column=2, sticky="w", padx=6)
+
     ein_frm = tk.LabelFrame(dlg, text="Neuen FK hinzufügen", padx=6, pady=4)
-    ein_frm.grid(row=2, column=0, sticky="ew", padx=10, pady=(0, 4))
+    ein_frm.grid(row=3, column=0, sticky="ew", padx=10, pady=(0, 4))
     for c in (0, 2, 4): ein_frm.columnconfigure(c, weight=1)
 
     tk.Label(ein_frm, text="QuellFeld").grid(row=0, column=0, sticky="w")
@@ -5101,7 +5125,7 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
 
     # ── FK-Liste ───────────────────────────────────────────────────────────
     liste_frm = tk.LabelFrame(dlg, text="Aktuelle FK-Constraints (PRAGMA foreign_key_list)", padx=4, pady=4)
-    liste_frm.grid(row=3, column=0, sticky="nsew", padx=10, pady=(0, 4))
+    liste_frm.grid(row=4, column=0, sticky="nsew", padx=10, pady=(0, 4))
     liste_frm.columnconfigure(0, weight=1)
     liste_frm.rowconfigure(0, weight=1)
 
@@ -5127,7 +5151,7 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
 
     # ── Buttons ────────────────────────────────────────────────────────────
     btn_frm = tk.Frame(dlg)
-    btn_frm.grid(row=4, column=0, sticky="ew", padx=10, pady=(2, 10))
+    btn_frm.grid(row=5, column=0, sticky="ew", padx=10, pady=(2, 10))
 
     def _hinzufuegen():
         qf = qf_var.get().strip()
@@ -5156,18 +5180,20 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
             ).fetchall()
             # Spaltendefinitionen
             col_defs = []
-            pk_cols = [r[1] for r in ci_fresh if r[5]]   # pk-Flag
+            # PK: aus Dialog-Auswahl (pk_neu_var) übernehmen
+            pk_wahl = pk_neu_var.get().strip()
+            pk_cols_neu = [pk_wahl] if pk_wahl and pk_wahl != "(keiner)" else []
             for ci in ci_fresh:
                 cname = ci[1]
                 ctype = ci[2] if ci[2] else "TEXT"
                 notnull = "NOT NULL" if ci[3] else ""
                 dflt = f"DEFAULT {ci[4]}" if ci[4] is not None else ""
-                pk = "PRIMARY KEY" if len(pk_cols) == 1 and ci[5] else ""
+                pk = "PRIMARY KEY" if len(pk_cols_neu) == 1 and cname == pk_cols_neu[0] else ""
                 parts = [p for p in [sql_identifier(cname), ctype, pk, notnull, dflt] if p]
                 col_defs.append(" ".join(parts))
-            if len(pk_cols) > 1:
+            if len(pk_cols_neu) > 1:
                 col_defs.append(
-                    f"PRIMARY KEY ({', '.join(sql_identifier(c) for c in pk_cols)})"
+                    f"PRIMARY KEY ({', '.join(sql_identifier(c) for c in pk_cols_neu)})"
                 )
             # FK-Constraints
             for fk in fks:
@@ -5203,6 +5229,12 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
         fks.extend(fks_neu)
         _tv_fuellen()
         _ddl_setzen(ddl_neu)
+        # PK-Anzeige aktualisieren
+        _pk_frisch = [r[1] for r in sqlite_verbindung_oeffnen().execute(
+            f"PRAGMA table_info({sql_identifier(tabellenname)})"
+        ).fetchall() if r[5]]
+        pk_var.set(", ".join(_pk_frisch) if _pk_frisch else "(keiner)")
+        pk_neu_cb.set(pk_var.get())
         messagebox.showinfo("FK gespeichert",
             f"Tabelle '{tabellenname}' neu erstellt.\n"
             f"{n_zeilen} Datensätze erhalten.\n"
@@ -8599,7 +8631,7 @@ def sql_abfrage_fenster_oeffnen():
 
         # Buttons
         btn_frm = tk.Frame(dlg)
-        btn_frm.grid(row=4, column=0, sticky="ew", padx=10, pady=(0, 10))
+        btn_frm.grid(row=5, column=0, sticky="ew", padx=10, pady=(0, 10))
 
         def _alle_neu_auswaehlen():
             tv.selection_set(neu_iids)
