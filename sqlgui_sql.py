@@ -4989,32 +4989,24 @@ def sql_fenster_felder_laden(tabellenname, tree_felder):
 
 def _relation_fuer_neue_tabelle_anbieten(parent, tabellenname, spalten):
     """Fragt nach dem Speichern einer Tabelle, ob Beziehungen in zzz_Relationen
-    eingetragen werden sollen. Liest aktives Projekt aus zzz_Projekte."""
+    eingetragen werden sollen. Projektneutral – Projekt bleibt leer."""
     import datetime as _dt
     if not db_ist_geladen():
         return
-    # Aktives Projekt lesen
     try:
         vb = sqlite_verbindung_oeffnen()
-        row = vb.execute(
-            f"SELECT projektname FROM {sql_identifier(G_TABELLE_PROJEKTE)} WHERE aktiv=1 LIMIT 1"
-        ).fetchone()
-        pname = row[0] if row else None
         alle_tabellen = [r[0] for r in vb.execute(
             "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
         ).fetchall()]
         vb.close()
     except Exception:
         return
-    if not pname:
-        return  # kein aktives Projekt → still beenden
 
     antwort = messagebox.askyesno(
         "Beziehungen definieren",
         f"Tabelle '{tabellenname}' wurde gespeichert.\n\n"
         f"Möchten Sie jetzt Beziehungen (Foreign Keys) für diese Tabelle\n"
-        f"in zzz_Relationen eintragen?\n\n"
-        f"(Projekt: {pname})",
+        f"in zzz_Relationen eintragen?",
         parent=parent)
     if not antwort:
         return
@@ -5029,7 +5021,7 @@ def _relation_fuer_neue_tabelle_anbieten(parent, tabellenname, spalten):
     dlg.columnconfigure(0, weight=1)
     dlg.rowconfigure(2, weight=1)
 
-    tk.Label(dlg, text=f"Tabelle: {tabellenname}   |   Projekt: {pname}",
+    tk.Label(dlg, text=f"Tabelle: {tabellenname}   (projektneutral – Projekt kann später zugewiesen werden)",
              font=("Segoe UI", 9, "bold"), anchor="w").grid(
         row=0, column=0, sticky="ew", padx=10, pady=(8, 4))
 
@@ -5131,7 +5123,7 @@ def _relation_fuer_neue_tabelle_anbieten(parent, tabellenname, spalten):
                     "INSERT INTO zzz_Relationen "
                     "(datetime, Projekt, Bezeichnung, QuellTabelle, QuellFeld, ZielTabelle, ZielFeld, Typ) "
                     "VALUES (?,?,?,?,?,?,?,?)",
-                    (now, pname, bez, tabellenname, qf, zt, zf, typ)
+                    (now, "", bez, tabellenname, qf, zt, zf, typ)
                 )
             vb.commit()
             vb.close()
@@ -5140,7 +5132,9 @@ def _relation_fuer_neue_tabelle_anbieten(parent, tabellenname, spalten):
             return
         dlg.destroy()
         messagebox.showinfo("Beziehungen gespeichert",
-            f"{len(liste)} Beziehung(en) für '{tabellenname}' eingetragen.", parent=parent)
+            f"{len(liste)} Beziehung(en) für '{tabellenname}' eingetragen.\n"
+            f"(projektneutral gespeichert – Projekt kann über die Relationenliste zugewiesen werden)",
+            parent=parent)
 
     btn_frm = tk.Frame(dlg)
     btn_frm.grid(row=3, column=0, sticky="ew", padx=10, pady=(4, 10))
