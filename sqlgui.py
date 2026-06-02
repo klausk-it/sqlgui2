@@ -47,6 +47,7 @@ from sqlgui_sql import (
     sql_editor_hat_ungespeicherte_aenderungen,
     sql_editor_speichern,
     _tv_sortieren,
+    fk_bearbeiten_fenster_oeffnen,
 )
 
 root = tk.Tk()
@@ -6316,6 +6317,11 @@ menutabelle.add_separator()
 menutabelle.add_command(label="Tabelle leeren", command=tabelle_leeren)
 menutabelle.add_command(label="Tabelle löschen", command=tabelle_loeschen)
 menutabelle.add_separator()
+menutabelle.add_command(label="Foreign Keys bearbeiten …",
+    command=lambda: fk_bearbeiten_fenster_oeffnen(
+        root,
+        tree_tabellen.item(tree_tabellen.selection()[0], "values")[0]
+        if tree_tabellen.selection() else ""))
 menutabelle.add_command(label="Header hinzufügen", command=header_hinzufuegen)
 menutabelle.add_command(label="PK hinzufügen", command=pk_hinzufuegen)
 menutabelle.add_separator()

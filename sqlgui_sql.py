@@ -4987,6 +4987,233 @@ def sql_fenster_felder_laden(tabellenname, tree_felder):
 
 
 
+
+def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
+    """Zeigt und bearbeitet FOREIGN KEY-Constraints einer Tabelle.
+    Da SQLite kein ALTER TABLE ADD/DROP FOREIGN KEY kennt, wird die
+    Tabelle bei Änderungen transparent neu erstellt (Daten bleiben erhalten)."""
+    import datetime as _dt
+    if not tabellenname:
+        messagebox.showwarning("Foreign Keys", "Keine Tabelle ausgewählt.", parent=parent)
+        return
+    if not db_ist_geladen():
+        messagebox.showwarning("Foreign Keys", "Keine Datenbank geladen.", parent=parent)
+        return
+
+    def _lade_info():
+        vb = sqlite_verbindung_oeffnen()
+        # Spalteninformationen
+        col_info = vb.execute(
+            f"PRAGMA table_info({sql_identifier(tabellenname)})"
+        ).fetchall()
+        # Vorhandene FKs: id, seq, table, from, to, on_update, on_delete, match
+        fk_raw = vb.execute(
+            f"PRAGMA foreign_key_list({sql_identifier(tabellenname)})"
+        ).fetchall()
+        alle_tabellen = [r[0] for r in vb.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        ).fetchall()]
+        vb.close()
+        col_namen = [r[1] for r in col_info]
+        # FKs als Liste von Dicts
+        fks = [{"from": r[3], "to_tab": r[2], "to_col": r[4]} for r in fk_raw]
+        return col_info, col_namen, fks, alle_tabellen
+
+    try:
+        col_info, col_namen, fks_start, alle_tabellen = _lade_info()
+    except Exception as e:
+        messagebox.showerror("Foreign Keys", f"Fehler beim Lesen: {e}", parent=parent)
+        return
+
+    # ── Dialog ────────────────────────────────────────────────────────────
+    dlg = tk.Toplevel(parent)
+    dlg.title(f"Foreign Keys: {tabellenname}")
+    dlg.geometry("780x500")
+    dlg.resizable(True, True)
+    dlg.grab_set()
+    dlg.transient(parent)
+    dlg.columnconfigure(0, weight=1)
+    dlg.rowconfigure(2, weight=1)
+
+    tk.Label(dlg,
+        text=f"Tabelle: {tabellenname}   –   Änderungen erfordern eine Tabellen-Neuerstellung (Daten bleiben erhalten)",
+        font=("Segoe UI", 9, "bold"), anchor="w"
+    ).grid(row=0, column=0, sticky="ew", padx=10, pady=(8, 4))
+
+    # ── Eingabezeile: neuen FK definieren ────────────────────────────────
+    ein_frm = tk.Frame(dlg, relief="groove", bd=1)
+    ein_frm.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 4))
+    for c in (0,2,4,6): ein_frm.columnconfigure(c, weight=1)
+
+    tk.Label(ein_frm, text="QuellFeld (diese Tabelle)", anchor="w").grid(
+        row=0, column=0, padx=6, pady=(4,0), sticky="w")
+    tk.Label(ein_frm, text="ZielTabelle", anchor="w").grid(
+        row=0, column=2, padx=6, pady=(4,0), sticky="w")
+    tk.Label(ein_frm, text="ZielFeld", anchor="w").grid(
+        row=0, column=4, padx=6, pady=(4,0), sticky="w")
+
+    qf_var = tk.StringVar()
+    zt_var = tk.StringVar()
+    zf_var = tk.StringVar()
+
+    qf_cb = ttk.Combobox(ein_frm, textvariable=qf_var, values=col_namen,    width=18, state="readonly")
+    zt_cb = ttk.Combobox(ein_frm, textvariable=zt_var, values=alle_tabellen, width=22, state="readonly")
+    zf_cb = ttk.Combobox(ein_frm, textvariable=zf_var, values=[],            width=18, state="readonly")
+
+    qf_cb.grid(row=1, column=0, padx=6, pady=4, sticky="ew")
+    tk.Label(ein_frm, text="→").grid(row=1, column=1)
+    zt_cb.grid(row=1, column=2, padx=6, pady=4, sticky="ew")
+    zf_cb.grid(row=1, column=4, padx=6, pady=4, sticky="ew")
+
+    def _zf_aktualisieren(event=None):
+        zt = zt_var.get()
+        if not zt: return
+        try:
+            vb2 = sqlite_verbindung_oeffnen()
+            felder = [r[1] for r in vb2.execute(
+                f"PRAGMA table_info({sql_identifier(zt)})"
+            ).fetchall()]
+            vb2.close()
+        except Exception:
+            felder = []
+        zf_cb["values"] = felder
+        if felder: zf_cb.set(felder[0])
+
+    zt_cb.bind("<<ComboboxSelected>>", _zf_aktualisieren)
+
+    # ── Treeview: aktuelle FK-Liste ────────────────────────────────────────
+    tv_frm = tk.Frame(dlg)
+    tv_frm.grid(row=2, column=0, sticky="nsew", padx=10, pady=2)
+    tv_frm.columnconfigure(0, weight=1)
+    tv_frm.rowconfigure(0, weight=1)
+
+    tv = ttk.Treeview(tv_frm,
+        columns=("qf", "zt", "zf"), show="headings", selectmode="browse")
+    tv.heading("qf", text="QuellFeld (diese Tabelle)", anchor="w")
+    tv.heading("zt", text="ZielTabelle",               anchor="w")
+    tv.heading("zf", text="ZielFeld",                  anchor="w")
+    tv.column("qf", width=200, anchor="w")
+    tv.column("zt", width=220, anchor="w")
+    tv.column("zf", width=180, anchor="w")
+    tv_sb = ttk.Scrollbar(tv_frm, orient="vertical", command=tv.yview)
+    tv_sb.grid(row=0, column=1, sticky="ns")
+    tv.grid(row=0, column=0, sticky="nsew")
+    tv.configure(yscrollcommand=tv_sb.set)
+
+    # Arbeitskopie der FK-Liste
+    fks = list(fks_start)
+
+    def _tv_fuellen():
+        tv.delete(*tv.get_children())
+        for fk in fks:
+            tv.insert("", "end", values=(fk["from"], fk["to_tab"], fk["to_col"]))
+        _status_aktualisieren()
+
+    status_lbl = tk.Label(dlg, anchor="w", foreground="#555555")
+    status_lbl.grid(row=3, column=0, sticky="ew", padx=10)
+
+    def _status_aktualisieren():
+        n_alt = len(fks_start)
+        n_neu = len(fks)
+        if fks == fks_start:
+            status_lbl.config(text=f"{n_neu} FK(s) vorhanden – keine Änderungen")
+        else:
+            status_lbl.config(
+                text=f"Vorher: {n_alt} FK(s)  →  Jetzt: {n_neu} FK(s)  –  ungespeicherte Änderungen",
+                foreground="#AA4400")
+
+    _tv_fuellen()
+
+    # ── Buttons ────────────────────────────────────────────────────────────
+    btn_frm = tk.Frame(dlg)
+    btn_frm.grid(row=4, column=0, sticky="ew", padx=10, pady=(4, 10))
+
+    def _hinzufuegen():
+        qf = qf_var.get().strip()
+        zt = zt_var.get().strip()
+        zf = zf_var.get().strip()
+        if not qf or not zt or not zf:
+            messagebox.showwarning("FK hinzufügen",
+                "Bitte QuellFeld, ZielTabelle und ZielFeld auswählen.", parent=dlg)
+            return
+        # Duplikat prüfen
+        if any(f["from"] == qf for f in fks):
+            if not messagebox.askyesno("Duplikat",
+                f"Für '{qf}' ist bereits ein FK definiert. Trotzdem hinzufügen?",
+                parent=dlg):
+                return
+        fks.append({"from": qf, "to_tab": zt, "to_col": zf})
+        _tv_fuellen()
+
+    def _loeschen():
+        sel = tv.selection()
+        if not sel:
+            messagebox.showwarning("FK löschen", "Bitte einen Eintrag auswählen.", parent=dlg)
+            return
+        idx = tv.index(sel[0])
+        del fks[idx]
+        _tv_fuellen()
+
+    def _speichern():
+        # Tabelle neu erstellen mit aktuellem FK-Set
+        try:
+            vb = sqlite_verbindung_oeffnen()
+            col_info_fresh = vb.execute(
+                f"PRAGMA table_info({sql_identifier(tabellenname)})"
+            ).fetchall()
+            # Spaltendefinitionen (ohne alte FKs – die stehen separat)
+            col_defs = []
+            for ci in col_info_fresh:
+                cname, ctype = ci[1], ci[2] if ci[2] else "TEXT"
+                pk_flag = ci[5]
+                if pk_flag:
+                    col_defs.append(f"{sql_identifier(cname)} {ctype} PRIMARY KEY")
+                else:
+                    col_defs.append(f"{sql_identifier(cname)} {ctype}")
+            # Neue FKs anhängen
+            for fk in fks:
+                col_defs.append(
+                    f"FOREIGN KEY ({sql_identifier(fk['from'])}) "
+                    f"REFERENCES {sql_identifier(fk['to_tab'])}({sql_identifier(fk['to_col'])})"
+                )
+            alle_zeilen = vb.execute(
+                f"SELECT * FROM {sql_identifier(tabellenname)}"
+            ).fetchall()
+            tmp = f"_fktmp_{tabellenname}"
+            vb.execute(f"DROP TABLE IF EXISTS {sql_identifier(tmp)}")
+            vb.execute(f"CREATE TABLE {sql_identifier(tmp)} ({', '.join(col_defs)})")
+            if alle_zeilen:
+                platz = ", ".join(["?"] * len(col_info_fresh))
+                vb.executemany(
+                    f"INSERT INTO {sql_identifier(tmp)} VALUES ({platz})", alle_zeilen)
+            vb.execute(f"DROP TABLE {sql_identifier(tabellenname)}")
+            vb.execute(
+                f"ALTER TABLE {sql_identifier(tmp)} RENAME TO {sql_identifier(tabellenname)}"
+            )
+            vb.commit()
+            vb.close()
+        except Exception as e:
+            messagebox.showerror("FK speichern",
+                f"Fehler beim Neuerstellen der Tabelle:\n{e}", parent=dlg)
+            return
+        # Arbeitskopie aktualisieren
+        fks_start.clear()
+        fks_start.extend(fks)
+        _status_aktualisieren()
+        messagebox.showinfo("FK gespeichert",
+            f"Tabelle '{tabellenname}' neu erstellt.\n"
+            f"{len(fks)} FOREIGN KEY-Constraint(s) aktiv.\n\n"
+            f"PRAGMA foreign_key_list({tabellenname}) gibt sie jetzt zurück.",
+            parent=dlg)
+
+    tk.Button(btn_frm, text="+ Hinzufügen", command=_hinzufuegen).pack(side="left", padx=(0,6))
+    tk.Button(btn_frm, text="− Löschen",    command=_loeschen).pack(side="left")
+    tk.Button(btn_frm, text="Speichern & Tabelle neu erstellen",
+              command=_speichern,
+              font=("Segoe UI", 9, "bold")).pack(side="right", padx=(8,0))
+    tk.Button(btn_frm, text="Schließen", command=dlg.destroy).pack(side="right")
+
+
 def _relation_fuer_neue_tabelle_anbieten(parent, tabellenname, spalten):
     """Fragt nach dem Speichern einer Tabelle, ob Beziehungen in zzz_Relationen
     eingetragen werden sollen. Projektneutral – Projekt bleibt leer."""
