@@ -5259,8 +5259,10 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
             vb.commit()
             vb.close()
         except Exception as e:
+            hinweis = ("\n\nBitte alle offenen Tabellenfenster für diese Tabelle\n"
+                       "schließen und erneut versuchen.") if "locked" in str(e).lower() else ""
             messagebox.showerror("FK speichern",
-                f"Fehler beim Neuerstellen:\n{e}", parent=dlg)
+                f"Fehler beim Neuerstellen:\n{e}{hinweis}", parent=dlg)
             return
         # Dialog aktualisieren
         _, fks_neu, _, ddl_neu = _db_lesen()
@@ -5269,9 +5271,11 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
         _tv_fuellen()
         _ddl_setzen(ddl_neu)
         # PK-Anzeige aktualisieren
-        _pk_frisch = [r[1] for r in sqlite_verbindung_oeffnen().execute(
+        _vb_pk = sqlite_verbindung_oeffnen()
+        _pk_frisch = [r[1] for r in _vb_pk.execute(
             f"PRAGMA table_info({sql_identifier(tabellenname)})"
         ).fetchall() if r[5]]
+        _vb_pk.close()
         pk_var.set(", ".join(_pk_frisch) if _pk_frisch else "(keiner)")
         pk_neu_cb.set(pk_var.get())
         messagebox.showinfo("FK gespeichert",
