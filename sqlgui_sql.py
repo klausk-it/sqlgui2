@@ -5013,14 +5013,20 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
         alle_tabellen = [r[0] for r in vb.execute(
             "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
         ).fetchall()]
+        # DDL aus sqlite_master für Diagnose
+        ddl_row = vb.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name=?",
+            (tabellenname,)
+        ).fetchone()
+        ddl = ddl_row[0] if ddl_row else "(nicht gefunden)"
         vb.close()
         col_namen = [r[1] for r in col_info]
         # FKs als Liste von Dicts
         fks = [{"from": r[3], "to_tab": r[2], "to_col": r[4]} for r in fk_raw]
-        return col_info, col_namen, fks, alle_tabellen
+        return col_info, col_namen, fks, alle_tabellen, ddl
 
     try:
-        col_info, col_namen, fks_start, alle_tabellen = _lade_info()
+        col_info, col_namen, fks_start, alle_tabellen, ddl_start = _lade_info()
     except Exception as e:
         messagebox.showerror("Foreign Keys", f"Fehler beim Lesen: {e}", parent=parent)
         return
@@ -5109,8 +5115,35 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
             tv.insert("", "end", values=(fk["from"], fk["to_tab"], fk["to_col"]))
         _status_aktualisieren()
 
+    # DDL-Anzeige (aufklappbar via Label-Klick)
+    ddl_frm = tk.Frame(dlg)
+    ddl_frm.grid(row=3, column=0, sticky="ew", padx=10, pady=(2,0))
+    ddl_frm.columnconfigure(0, weight=1)
+    ddl_sichtbar = [False]
+    ddl_txt = tk.Text(ddl_frm, height=4, font=("Consolas", 8), wrap="word",
+                      state="disabled", background="#1a1a1a", foreground="#cccccc")
+    def _ddl_aktualisieren(ddl_inhalt):
+        ddl_txt.config(state="normal")
+        ddl_txt.delete("1.0", "end")
+        ddl_txt.insert("end", ddl_inhalt)
+        ddl_txt.config(state="disabled")
+    _ddl_aktualisieren(ddl_start)
+    ddl_toggle_lbl = tk.Label(ddl_frm, text="▶ CREATE TABLE DDL anzeigen",
+                               anchor="w", foreground="#0066cc", cursor="hand2",
+                               font=("Segoe UI", 8))
+    ddl_toggle_lbl.grid(row=0, column=0, sticky="w")
+    def _ddl_toggle(e=None):
+        ddl_sichtbar[0] = not ddl_sichtbar[0]
+        if ddl_sichtbar[0]:
+            ddl_txt.grid(row=1, column=0, sticky="ew")
+            ddl_toggle_lbl.config(text="▼ CREATE TABLE DDL verbergen")
+        else:
+            ddl_txt.grid_remove()
+            ddl_toggle_lbl.config(text="▶ CREATE TABLE DDL anzeigen")
+    ddl_toggle_lbl.bind("<Button-1>", _ddl_toggle)
+
     status_lbl = tk.Label(dlg, anchor="w", foreground="#555555")
-    status_lbl.grid(row=3, column=0, sticky="ew", padx=10)
+    status_lbl.grid(row=4, column=0, sticky="ew", padx=10)
 
     def _status_aktualisieren():
         n_alt = len(fks_start)
@@ -5126,7 +5159,7 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
 
     # ── Buttons ────────────────────────────────────────────────────────────
     btn_frm = tk.Frame(dlg)
-    btn_frm.grid(row=4, column=0, sticky="ew", padx=10, pady=(4, 10))
+    btn_frm.grid(row=5, column=0, sticky="ew", padx=10, pady=(4, 10))
 
     def _hinzufuegen():
         qf = qf_var.get().strip()
@@ -5199,6 +5232,8 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
         # Arbeitskopie aktualisieren
         fks_start.clear()
         fks_start.extend(fks)
+        _, _, _, _, ddl_neu = _lade_info()
+        _ddl_aktualisieren(ddl_neu)
         _status_aktualisieren()
         messagebox.showinfo("FK gespeichert",
             f"Tabelle '{tabellenname}' neu erstellt.\n"
