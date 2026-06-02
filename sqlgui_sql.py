@@ -4986,6 +4986,171 @@ def sql_fenster_felder_laden(tabellenname, tree_felder):
         tree_felder.insert("", "end", values=(f"{tabellenname}.{spalte}",))
 
 
+
+def _relation_fuer_neue_tabelle_anbieten(parent, tabellenname, spalten):
+    """Fragt nach dem Speichern einer Tabelle, ob Beziehungen in zzz_Relationen
+    eingetragen werden sollen. Liest aktives Projekt aus zzz_Projekte."""
+    import datetime as _dt
+    if not db_ist_geladen():
+        return
+    # Aktives Projekt lesen
+    try:
+        vb = sqlite_verbindung_oeffnen()
+        row = vb.execute(
+            f"SELECT projektname FROM {sql_identifier(G_TABELLE_PROJEKTE)} WHERE aktiv=1 LIMIT 1"
+        ).fetchone()
+        pname = row[0] if row else None
+        alle_tabellen = [r[0] for r in vb.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        ).fetchall()]
+        vb.close()
+    except Exception:
+        return
+    if not pname:
+        return  # kein aktives Projekt → still beenden
+
+    antwort = messagebox.askyesno(
+        "Beziehungen definieren",
+        f"Tabelle '{tabellenname}' wurde gespeichert.\n\n"
+        f"Möchten Sie jetzt Beziehungen (Foreign Keys) für diese Tabelle\n"
+        f"in zzz_Relationen eintragen?\n\n"
+        f"(Projekt: {pname})",
+        parent=parent)
+    if not antwort:
+        return
+
+    # ── Dialog ────────────────────────────────────────────────────────────
+    dlg = tk.Toplevel(parent)
+    dlg.title(f"Beziehungen für '{tabellenname}' definieren")
+    dlg.geometry("760x480")
+    dlg.resizable(True, True)
+    dlg.grab_set()
+    dlg.transient(parent)
+    dlg.columnconfigure(0, weight=1)
+    dlg.rowconfigure(2, weight=1)
+
+    tk.Label(dlg, text=f"Tabelle: {tabellenname}   |   Projekt: {pname}",
+             font=("Segoe UI", 9, "bold"), anchor="w").grid(
+        row=0, column=0, sticky="ew", padx=10, pady=(8, 4))
+
+    # ── Eingabezeile ──────────────────────────────────────────────────────
+    ein_frm = tk.Frame(dlg, relief="groove", bd=1)
+    ein_frm.grid(row=1, column=0, sticky="ew", padx=10, pady=(0, 4))
+    for c in range(8): ein_frm.columnconfigure(c, weight=1)
+
+    tk.Label(ein_frm, text="QuellFeld", anchor="w").grid(row=0, column=0, padx=4, pady=(4,0), sticky="w")
+    tk.Label(ein_frm, text="→  ZielTabelle", anchor="w").grid(row=0, column=2, padx=4, pady=(4,0), sticky="w")
+    tk.Label(ein_frm, text="ZielFeld", anchor="w").grid(row=0, column=4, padx=4, pady=(4,0), sticky="w")
+    tk.Label(ein_frm, text="Bezeichnung", anchor="w").grid(row=0, column=6, padx=4, pady=(4,0), sticky="w")
+
+    qf_var  = tk.StringVar()
+    zt_var  = tk.StringVar()
+    zf_var  = tk.StringVar()
+    bez_var = tk.StringVar()
+
+    qf_cb = ttk.Combobox(ein_frm, textvariable=qf_var,  values=list(spalten), width=18, state="readonly")
+    zt_cb = ttk.Combobox(ein_frm, textvariable=zt_var,  values=alle_tabellen, width=22, state="readonly")
+    zf_cb = ttk.Combobox(ein_frm, textvariable=zf_var,  values=[],            width=18, state="readonly")
+    bez_e = tk.Entry(ein_frm, textvariable=bez_var, width=20)
+
+    qf_cb.grid(row=1, column=0, padx=4, pady=4, sticky="ew")
+    tk.Label(ein_frm, text="→").grid(row=1, column=1)
+    zt_cb.grid(row=1, column=2, padx=4, pady=4, sticky="ew")
+    zf_cb.grid(row=1, column=4, padx=4, pady=4, sticky="ew")
+    bez_e.grid(row=1, column=6, padx=4, pady=4, sticky="ew")
+
+    tk.Label(ein_frm, text="Typ").grid(row=0, column=3, padx=4, pady=(4,0), sticky="w")
+    typ_var = tk.StringVar(value="1:N")
+    typ_cb  = ttk.Combobox(ein_frm, textvariable=typ_var, values=["1:1","1:N","N:M"], width=6, state="readonly")
+    typ_cb.grid(row=1, column=3, padx=4, pady=4)
+
+    def _zf_aktualisieren(event=None):
+        zt = zt_var.get()
+        if not zt:
+            zf_cb["values"] = []
+            return
+        try:
+            vb2 = sqlite_verbindung_oeffnen()
+            felder = [r[1] for r in vb2.execute(f"PRAGMA table_info({sql_identifier(zt)})").fetchall()]
+            vb2.close()
+        except Exception:
+            felder = []
+        zf_cb["values"] = felder
+        if felder:
+            zf_cb.set(felder[0])
+
+    zt_cb.bind("<<ComboboxSelected>>", _zf_aktualisieren)
+
+    # ── Liste der geplanten Einträge ───────────────────────────────────────
+    liste = []   # (qf, zt, zf, typ, bez)
+
+    tv_frm = tk.Frame(dlg)
+    tv_frm.grid(row=2, column=0, sticky="nsew", padx=10, pady=2)
+    tv_frm.columnconfigure(0, weight=1)
+    tv_frm.rowconfigure(0, weight=1)
+    tv = ttk.Treeview(tv_frm,
+        columns=("qf","zt","zf","typ","bez"), show="headings", selectmode="browse")
+    tv.heading("qf",  text="QuellFeld");    tv.column("qf",  width=130, anchor="w")
+    tv.heading("zt",  text="ZielTabelle");  tv.column("zt",  width=170, anchor="w")
+    tv.heading("zf",  text="ZielFeld");     tv.column("zf",  width=120, anchor="w")
+    tv.heading("typ", text="Typ");          tv.column("typ", width=50,  anchor="center")
+    tv.heading("bez", text="Bezeichnung");  tv.column("bez", width=200, anchor="w")
+    tv_sb = ttk.Scrollbar(tv_frm, orient="vertical", command=tv.yview)
+    tv_sb.grid(row=0, column=1, sticky="ns")
+    tv.grid(row=0, column=0, sticky="nsew")
+    tv.configure(yscrollcommand=tv_sb.set)
+
+    def _hinzufuegen():
+        qf = qf_var.get().strip()
+        zt = zt_var.get().strip()
+        zf = zf_var.get().strip()
+        typ = typ_var.get()
+        bez = bez_var.get().strip() or f"{tabellenname}.{qf} → {zt}.{zf}"
+        if not qf or not zt or not zf:
+            messagebox.showwarning("Beziehung", "Bitte QuellFeld, ZielTabelle und ZielFeld auswählen.", parent=dlg)
+            return
+        liste.append((qf, zt, zf, typ, bez))
+        tv.insert("", "end", values=(qf, zt, zf, typ, bez))
+
+    def _entfernen():
+        sel = tv.selection()
+        if sel:
+            idx = tv.index(sel[0])
+            tv.delete(sel[0])
+            del liste[idx]
+
+    def _speichern():
+        if not liste:
+            dlg.destroy()
+            return
+        try:
+            vb = sqlite_verbindung_oeffnen()
+            now = _dt.datetime.now().isoformat(sep=" ", timespec="seconds")
+            for qf, zt, zf, typ, bez in liste:
+                vb.execute(
+                    "INSERT INTO zzz_Relationen "
+                    "(datetime, Projekt, Bezeichnung, QuellTabelle, QuellFeld, ZielTabelle, ZielFeld, Typ) "
+                    "VALUES (?,?,?,?,?,?,?,?)",
+                    (now, pname, bez, tabellenname, qf, zt, zf, typ)
+                )
+            vb.commit()
+            vb.close()
+        except Exception as e:
+            messagebox.showerror("Beziehungen speichern", f"Fehler: {e}", parent=dlg)
+            return
+        dlg.destroy()
+        messagebox.showinfo("Beziehungen gespeichert",
+            f"{len(liste)} Beziehung(en) für '{tabellenname}' eingetragen.", parent=parent)
+
+    btn_frm = tk.Frame(dlg)
+    btn_frm.grid(row=3, column=0, sticky="ew", padx=10, pady=(4, 10))
+    tk.Button(btn_frm, text="+ Hinzufügen", command=_hinzufuegen).pack(side="left", padx=(0,6))
+    tk.Button(btn_frm, text="− Entfernen",  command=_entfernen).pack(side="left")
+    tk.Button(btn_frm, text="Speichern",    command=_speichern,
+              font=("Segoe UI", 9, "bold")).pack(side="right", padx=(8,0))
+    tk.Button(btn_frm, text="Überspringen", command=dlg.destroy).pack(side="right")
+
+
 def sql_ergebnis_als_tabelle_speichern(parent, vorgeschlagene_zieltabelle, spalten, zeilen):
     if not db_pruefen_oder_warnen():
         return
@@ -5076,6 +5241,7 @@ def sql_ergebnis_als_tabelle_speichern(parent, vorgeschlagene_zieltabelle, spalt
         else:
             hinweis = ""
         messagebox.showinfo("Als Tabelle ablegen", f"{hinweis}Ergebnis wurde als Tabelle '{tabellenname}' gespeichert.", parent=parent)
+        _relation_fuer_neue_tabelle_anbieten(parent, tabellenname, bereinigte_spalten)
     except Exception as e:
         messagebox.showerror("Als Tabelle ablegen", f"Ergebnis konnte nicht als Tabelle gespeichert werden:\n{e}", parent=parent)
 
