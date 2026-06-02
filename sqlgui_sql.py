@@ -4473,7 +4473,7 @@ def _workflow_abfrage_fenster_oeffnen_modul(abfragename):
             return
         try:
             with open(pfad, "w", newline="", encoding="utf-8-sig") as fh:
-                w = _csv.writer(fh, delimiter=",")
+                w = _csv.writer(fh, delimiter=",", quotechar='"', quoting=_csv.QUOTE_ALL)
                 w.writerow(spalten)
                 w.writerows(zeilen)
             messagebox.showinfo("Als CSV speichern",
