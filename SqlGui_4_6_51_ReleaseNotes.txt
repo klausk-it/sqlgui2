@@ -1783,3 +1783,163 @@ VERSIONSHISTORIE (KurzÃ¼bersicht)
            Ketten-Navigation: "In vorhergehende Tabelle hüpfen" — Doppelklick
            oder Schaltfläche springt vom Ketten-Ergebnis zurück in das
            Quelltabellen-Fenster und selektiert den passenden Datensatz
+
+
+================================================================================
+NEUESTE AENDERUNGEN (nach 4.6.51)
+================================================================================
+
+  A. TABELLENLISTE AKTUALISIEREN (F5)
+
+  • Hauptfenster: Menüeintrag "Tabelle → Tabellenliste aktualisieren [F5]"
+    Erster Eintrag im Tabelle-Menü, vor allen anderen Tabellen-Operationen.
+    Nach dem Anlegen neuer Tabellen per SQL (CREATE TABLE) kann die linke
+    Tabellenliste mit einem Klick oder per F5-Taste sofort neu geladen werden.
+    F5 wirkt auf das gesamte Hauptfenster und auf die linke Treeview.
+
+  • SQL-Fenster: Rechtsklick auf Tabellenliste → "Aktualisieren (F5)"
+    Erster Eintrag im Kontextmenü, vor allen anderen Aktionen.
+    F5 auf der Tabellenliste oder im gesamten SQL-Fenster lädt die Liste neu.
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  B. FOREIGN KEYS UND PRIMARY KEY (Tabelle-Menü)
+
+  • Neuer Menüeintrag "Tabelle → Foreign Keys bearbeiten …"
+    Öffnet einen einzigen Dialog mit drei Bereichen:
+
+    1. CREATE TABLE DDL (sqlite_master):
+       Die vollständige CREATE TABLE-Definition der Tabelle, eingerückt
+       und mehrzeilig formatiert — jede Spalte und jeder Constraint
+       auf einer eigenen Zeile, 4 Leerzeichen Einrückung.
+       Zeigt sofort was wirklich in der Datenbank steht
+       (PRAGMA foreign_key_list und sqlite_master gemeinsam).
+       Wird nach jeder Änderung automatisch aktualisiert.
+
+    2. Primary Key:
+       Zeigt den aktuell gesetzten PK (aus PRAGMA table_info).
+       Neue Auswahl über eine Listbox mit Mehrfachauswahl:
+         – Einfacher PK: eine Spalte anklicken
+         – Zusammengesetzter PK: mehrere Spalten per Strg+Klick markieren
+           (z.B. ByGrID + ByID bei Verknüpfungstabellen)
+         – Kein PK: nichts markieren
+
+    3. Foreign Key-Constraints (PRAGMA foreign_key_list):
+       Zeigt alle vorhandenen FKs in einer Treeview.
+       Neuen FK hinzufügen:
+         QuellFeld (Dropdown dieser Tabelle) → ZielTabelle → ZielFeld
+         (ZielFeld-Dropdown aktualisiert sich automatisch bei Tabellenwahl)
+       FK löschen: Eintrag markieren → "− Löschen"
+
+    Schaltfläche "Tabelle neu erstellen":
+       Da SQLite kein ALTER TABLE ADD/DROP FOREIGN KEY oder
+       ALTER TABLE ADD/DROP PRIMARY KEY kennt, wird die Tabelle
+       intern transparent neu erstellt:
+         1. Aktuelle Daten sichern (SELECT * FROM ...)
+         2. Temp-Tabelle mit neuer CREATE TABLE-Definition anlegen
+            (inkl. gewähltem PK und allen FKs)
+         3. Daten einfügen (INSERT INTO temp SELECT ...)
+         4. Originaltabelle löschen (DROP TABLE)
+         5. Temp-Tabelle umbenennen (ALTER TABLE ... RENAME TO ...)
+       Alle Datensätze bleiben vollständig erhalten.
+       Nach der Operation:
+         – DDL-Anzeige zeigt die neue Definition
+         – PRAGMA foreign_key_list gibt die FKs zurück
+         – "FK aus DB importieren" findet sie automatisch
+
+    Fehlermeldungen:
+       "database is locked" → Hinweis: offene Tabellenfenster schließen
+       "UNIQUE constraint failed" → Hinweis: Spalte hat Duplikate, für
+         Verknüpfungstabellen zusammengesetzten PK per Strg+Klick wählen
+
+  • FK aus DB importieren (Relationen-Rechtsklick)
+    Rechtsklick auf die Relationenliste im PROJEKT-Reiter →
+    "FK aus DB importieren …"
+    Liest PRAGMA foreign_key_list für alle Tabellen der Datenbank.
+    Zeigt alle gefundenen FK-Constraints mit Status:
+      – Neu (vorausgewählt, normal angezeigt)
+      – Bereits vorhanden (grau, nicht vorausgewählt)
+    Optional: Bezeichnung-Präfix und Typ (1:1 / 1:N / N:M) setzen.
+    "Importieren" trägt alle ausgewählten FKs in zzz_Relationen ein.
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  C. WORKFLOW-SQL-ERGEBNISFENSTER
+
+  • Neue Menüpunkte im Workflow-SQL-Ergebnisfenster
+    Das Fenster, das sich beim Doppelklick auf eine gespeicherte SQL-Abfrage
+    im Workflow öffnet, hatte bisher nur "Schließen". Neu:
+      – Als Tabelle speichern   Aktuelles Ergebnis als neue DB-Tabelle ablegen
+      – Als CSV speichern       CSV-Export ins Export-Verzeichnis
+      – Tabelle aktualisieren [F5]   SQL erneut ausführen
+      – Schließen
+    F5-Taste auf dem Fenster löst ebenfalls "Aktualisieren" aus.
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  D. CSV-EXPORT
+
+  • Einheitliches Export-Verzeichnis
+    Alle CSV-Exporte aus dem SQL-Fenster (Ergebnisfenster) und aus dem
+    Workflow-SQL-Ergebnisfenster öffnen den Speichern-Dialog jetzt
+    standardmäßig im Verzeichnis "Export/" — eine Ebene über dem
+    "DB/"-Ordner (identisch zum bestehenden Verhalten im Tabellenfenster).
+    Falls das Verzeichnis noch nicht existiert, wird es automatisch angelegt.
+
+  • QUOTE_ALL überall einheitlich
+    Alle Felder in CSV-Exporten werden konsequent in doppelte
+    Anführungszeichen gesetzt (csv.QUOTE_ALL), identisch zu den
+    anderen Export-Funktionen der Anwendung.
+
+  ───────────────────────────────────────────────────────────────────────────
+
+  E. SCHRITTWEISE-FENSTER (Überschneidungen in Kette)
+
+  • Neuer Button "Alle Gruppen: Ergebnis (Schritt 5)"
+    Oberhalb der Einzelschritt-Zeile (◄ Schritt 1 / Einzelschritt ►).
+    Zeigt Schritt 5 (Ergebnis) für alle Gruppen mit Überschneidungen
+    in einer einzigen Ansicht — ohne Gruppe einzeln anklicken zu müssen.
+
+  • Reihenfolge der Buttons
+    "Alle Gruppen: Ergebnis (Schritt 5)" steht in Zeile 1
+    direkt unter der Überschrift "Schrittweise Ausführen".
+    Die Einzelschritt-Zeile (◄ Schritt 1 / Label / Einzelschritt ► /
+    Alle ausführen) folgt in Zeile 2.
+
+  • Geänderte Startlogik
+    Klick auf eine Gruppen-ID → alle 5 Schritte werden sofort
+    vollständig angezeigt, ans Ende gescrollt.
+    "Einzelschritt ►" setzt die Anzeige auf Schritt 1 zurück und
+    ermöglicht das schrittweise Durchblättern.
+
+  • Schritt 5 (Ergebnis): vollständige Informationen
+    Gruppenname und Gruppen-ID als Kopfzeile des Ergebnis-Blocks.
+    Spalten: Zeile A, Eintrag A, Anzeigename A, Zeile B, Eintrag B,
+    Anzeigename B, Überschn. Start, Überschn. Ende, Anzahl IPs.
+    A-Einträge als Kopfzeile, B-Einträge eingerückt darunter.
+    10 Leerzeilen am Ende zum Durchscrollen.
+
+  • g_tv (Gruppen-Treeview): automatische Spaltenbreiten
+    Nach dem Öffnen des Fensters werden die Spaltenbreiten per
+    Schrift-Metrik (tree_spalten_breiten_anpassen) gesetzt —
+    mit kurzer Verzögerung (after 200ms) damit das Fenster
+    vollständig gerendert ist.
+
+================================================================================
+VERSIONSHISTORIE (Nachtrag)
+================================================================================
+
+  Nach 4.6.51:
+    F5 Tabellenliste-Aktualisierung (Haupt- und SQL-Fenster),
+    "Tabelle → Foreign Keys bearbeiten …": PK (Mehrfachauswahl) + FK
+    definieren in einem Dialog, Tabelle wird transparent neu erstellt,
+    DDL aus sqlite_master eingerückt dargestellt,
+    "FK aus DB importieren" im Relationen-Rechtsklick (PRAGMA → zzz_Relationen),
+    Workflow-SQL-Fenster: Als Tabelle/CSV speichern + F5-Aktualisierung,
+    CSV-Export: Export-Verzeichnis automatisch anlegen + QUOTE_ALL überall,
+    Überschneidungen-Fenster: "Alle Gruppen: Ergebnis (Schritt 5)"-Button,
+    Button-Reihenfolge neu (Alle Gruppen über Einzelschritt-Zeile),
+    Gruppenklick zeigt alle 5 Schritte sofort, Einzelschritt ► setzt auf 1 zurück,
+    Schritt 5 mit Anzeigenamen, Gruppenname/-ID, A/B-Struktur, 10 Leerzeilen,
+    g_tv Spaltenbreiten automatisch nach Fenster-Render (after 200ms)
+
