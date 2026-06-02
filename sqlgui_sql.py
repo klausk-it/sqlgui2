@@ -5211,7 +5211,7 @@ def fk_bearbeiten_fenster_oeffnen(parent, tabellenname):
 
     tk.Button(btn_frm, text="+ Hinzufügen", command=_hinzufuegen).pack(side="left", padx=(0,6))
     tk.Button(btn_frm, text="− Löschen",    command=_loeschen).pack(side="left")
-    tk.Button(btn_frm, text="Speichern  (Daten bleiben erhalten)",
+    tk.Button(btn_frm, text="Tabelle neu erstellen",
               command=_speichern,
               font=("Segoe UI", 9, "bold")).pack(side="right", padx=(8,0))
     tk.Button(btn_frm, text="Schließen", command=dlg.destroy).pack(side="right")
