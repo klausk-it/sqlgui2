@@ -4432,7 +4432,48 @@ def _workflow_abfrage_fenster_oeffnen_modul(abfragename):
         res.destroy()
 
     res_menue = fenster_standard_menue_anbringen(res, "1000x600", f"Workflow-SQL: {abfragename}")
-    res_menue.add_command(label="Schließen", command=_schliessen)
+
+    def _als_tabelle_speichern():
+        spalten = list(tv["columns"])
+        zeilen  = zeilen_ref.get("alle", [])
+        if not zeilen:
+            messagebox.showwarning("Als Tabelle speichern",
+                "Es sind keine Datensätze vorhanden.", parent=res)
+            return
+        sql_ergebnis_als_tabelle_speichern(res, abfragename, spalten, zeilen)
+
+    def _als_csv_speichern():
+        import csv as _csv, tkinter.filedialog as _fd
+        spalten = list(tv["columns"])
+        zeilen  = zeilen_ref.get("alle", [])
+        if not zeilen:
+            messagebox.showwarning("Als CSV speichern",
+                "Es sind keine Datensätze vorhanden.", parent=res)
+            return
+        pfad = _fd.asksaveasfilename(
+            parent=res, defaultextension=".csv",
+            filetypes=[("CSV", "*.csv"), ("Alle Dateien", "*.*")],
+            initialfile=f"{abfragename}.csv")
+        if not pfad:
+            return
+        try:
+            with open(pfad, "w", newline="", encoding="utf-8-sig") as fh:
+                w = _csv.writer(fh, delimiter=";")
+                w.writerow(spalten)
+                w.writerows(zeilen)
+            messagebox.showinfo("Als CSV speichern",
+                f"Gespeichert: {pfad}", parent=res)
+        except Exception as e:
+            messagebox.showerror("Als CSV speichern", str(e), parent=res)
+
+    def _aktualisieren():
+        abfrage_ausfuehren()
+
+    res_menue.add_command(label="Als Tabelle speichern", command=_als_tabelle_speichern)
+    res_menue.add_command(label="Als CSV speichern",     command=_als_csv_speichern)
+    res_menue.add_command(label="Tabelle aktualisieren  [F5]", command=_aktualisieren)
+    res_menue.add_command(label="Schließen",             command=_schliessen)
+    res.bind("<F5>", lambda e: _aktualisieren())
     res.protocol("WM_DELETE_WINDOW", _schliessen)
 
     tv_frame = tk.Frame(res)
