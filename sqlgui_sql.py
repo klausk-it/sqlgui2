@@ -828,6 +828,19 @@ def sql_zeile_im_lesefenster_mit_navigation(parent, basis_titel, tv, spalten, st
         pass
 
 
+def _export_verzeichnis():
+    """Gibt das Export-Verzeichnis neben der geladenen DB zurück und legt es an."""
+    import pathlib
+    db = get_geladene_db_datei()
+    if db:
+        basis = pathlib.Path(db).resolve().parent.parent
+    else:
+        basis = pathlib.Path(__file__).resolve().parent
+    export = basis / "Export"
+    export.mkdir(parents=True, exist_ok=True)
+    return export
+
+
 def sql_modul_initialisieren(
     root_widget,
     exe_title,
@@ -4450,19 +4463,21 @@ def _workflow_abfrage_fenster_oeffnen_modul(abfragename):
             messagebox.showwarning("Als CSV speichern",
                 "Es sind keine Datensätze vorhanden.", parent=res)
             return
+        _export_dir = _export_verzeichnis()
         pfad = _fd.asksaveasfilename(
             parent=res, defaultextension=".csv",
             filetypes=[("CSV", "*.csv"), ("Alle Dateien", "*.*")],
-            initialfile=f"{abfragename}.csv")
+            initialfile=f"{abfragename}.csv",
+            initialdir=str(_export_dir))
         if not pfad:
             return
         try:
             with open(pfad, "w", newline="", encoding="utf-8-sig") as fh:
-                w = _csv.writer(fh, delimiter=";")
+                w = _csv.writer(fh, delimiter=",")
                 w.writerow(spalten)
                 w.writerows(zeilen)
             messagebox.showinfo("Als CSV speichern",
-                f"Gespeichert: {pfad}", parent=res)
+                f"Gespeichert:\n{pfad}", parent=res)
         except Exception as e:
             messagebox.showerror("Als CSV speichern", str(e), parent=res)
 
@@ -10150,8 +10165,7 @@ def sql_abfrage_fenster_oeffnen():
                         basisname = f"{fenster_suffix}_Ergebnis"
                         if ergebnis_cache.get("filter_aktiv"):
                             basisname = f"{basisname}_Filter"
-                        import pathlib, os
-                        export_dir = pathlib.Path(os.path.dirname(get_geladene_db_datei()) if get_geladene_db_datei() else ".")
+                        export_dir = _export_verzeichnis()
                         vorgeschlagen = eindeutigen_dateinamen_vorschlagen_funktion(export_dir, basisname, ".csv")
                         dateipfad = filedialog.asksaveasfilename(
                             title="SQL-Ergebnis als CSV speichern",
