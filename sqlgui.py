@@ -3195,6 +3195,14 @@ def tabellenfenster_rechtsklick(event, fenster_id):
     menu.add_separator()
     # Block 5: Beziehungen
     menu.add_command(label="Verknüpfte Datensätze anzeigen", command=lambda: tabellenfenster_verknuepfte_datensaetze_anzeigen(fenster_id))
+    sub_vd = tk.Menu(menu, tearoff=0)
+    sub_vd.add_command(label="Vorwärts über FKs  (diese Tabelle → Ziel)",
+        command=lambda: tabellenfenster_vd_vorwaerts_fk(fenster_id))
+    sub_vd.add_command(label="Rückwärts über FKs  (wer zeigt auf diese Tabelle?)",
+        command=lambda: tabellenfenster_vd_rueckwaerts_fk(fenster_id))
+    sub_vd.add_command(label="Namenbasiert  (alle Tabellen durchsuchen)",
+        command=lambda: tabellenfenster_vd_namenbasiert(fenster_id))
+    menu.add_cascade(label="Verknüpfte Datensätze (ohne Projekt)  ▶", menu=sub_vd)
     menu.add_separator()
     # Block 6: Findings / Zeile löschen
     menu.add_command(label="Finding hinzufügen", command=lambda: tabellenfenster_finding_hinzufuegen(fenster_id))
@@ -3630,6 +3638,287 @@ def _verknuepfte_datensaetze_fenster_aufbauen(tabellenname, spalten, werte, pare
                  anchor="w", fg="#888888").pack(fill="x", padx=8, pady=8)
 
     win.focus_set()
+
+
+
+def _vd_ohne_projekt_basis(fenster_id):
+    """Gemeinsame Vorbereitung für alle drei 'ohne Projekt'-Modi.
+    Gibt (cache, tabellenname, spalten, werte, parent_win) zurück oder None."""
+    cache = G_tabellen_cache.get(fenster_id)
+    if not cache:
+        return None
+    item_id = cache.get("kontext_item_id")
+    if not item_id:
+        messagebox.showwarning("Verknüpfte Datensätze",
+            "Bitte zuerst eine Zeile auswählen.", parent=cache["fenster"])
+        return None
+    tabellenname = cache.get("tabellenname", "")
+    spalten      = list(cache.get("spalten", []))
+    werte        = list(cache["tree"].item(item_id, "values"))
+    return cache, tabellenname, spalten, werte, cache["fenster"]
+
+
+def _vd_ergebnis_fenster(titel, parent):
+    """Erstellt das Ergebnis-Toplevel mit scrollbarem Innenbereich.
+    Gibt (win, scroll_frame, status_lbl) zurück."""
+    win = tk.Toplevel(parent)
+    win.title(titel)
+    win.geometry("900x600")
+    win.minsize(400, 200)
+    fenster_registrieren(win, "VD-ohne-Projekt")
+    fenster_standard_menue_anbringen(win, "900x600", titel)
+
+    status_lbl = tk.Label(win, text="", anchor="w",
+                          font=("Segoe UI", 8), foreground="#666666")
+    status_lbl.pack(fill="x", padx=8, pady=(4, 0))
+
+    outer = tk.Frame(win)
+    outer.pack(fill="both", expand=True, padx=8, pady=4)
+    canvas = tk.Canvas(outer, borderwidth=0, highlightthickness=0)
+    vsb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+    canvas.configure(yscrollcommand=vsb.set)
+    vsb.pack(side="right", fill="y")
+    canvas.pack(side="left", fill="both", expand=True)
+    scroll_frame = tk.Frame(canvas)
+    sf_id = canvas.create_window((0, 0), window=scroll_frame, anchor="nw")
+    def _on_configure(e):
+        canvas.configure(scrollregion=canvas.bbox("all"))
+        canvas.itemconfig(sf_id, width=canvas.winfo_width())
+    scroll_frame.bind("<Configure>", _on_configure)
+    canvas.bind("<Configure>", lambda e: canvas.itemconfig(sf_id, width=e.width))
+    def _mwheel(e):
+        canvas.yview_scroll(int(-1*(e.delta/120)), "units")
+    canvas.bind_all("<MouseWheel>", _mwheel)
+    return win, scroll_frame, status_lbl
+
+
+def _vd_block_einfuegen(scroll_frame, titel, spalten, zeilen, farbe="#0055AA"):
+    """Fügt einen Ergebnis-Block (Label + Treeview) in scroll_frame ein."""
+    tk.Label(scroll_frame, text=titel, font=("Segoe UI", 9, "bold"),
+             foreground=farbe, anchor="w").pack(fill="x", pady=(8, 2))
+    if not zeilen:
+        tk.Label(scroll_frame, text="  (keine Treffer)", anchor="w",
+                 foreground="#888888").pack(fill="x")
+        return
+    frm = tk.Frame(scroll_frame)
+    frm.pack(fill="x", pady=(0, 4))
+    frm.columnconfigure(0, weight=1)
+    tv = ttk.Treeview(frm, columns=spalten, show="headings",
+                      height=min(len(zeilen), 8), selectmode="browse")
+    for sp in spalten:
+        tv.heading(sp, text=sp, anchor="w")
+        tv.column(sp, width=120, anchor="w", stretch=True)
+    for z in zeilen:
+        tv.insert("", "end", values=z)
+    sb = ttk.Scrollbar(frm, orient="horizontal", command=tv.xview)
+    tv.configure(xscrollcommand=sb.set)
+    tv.grid(row=0, column=0, sticky="ew")
+    sb.grid(row=1, column=0, sticky="ew")
+    tree_spalten_breiten_anpassen(tv)
+
+
+def tabellenfenster_vd_vorwaerts_fk(fenster_id):
+    """Verknüpfte Datensätze: vorwärts über FK-Constraints dieser Tabelle."""
+    basis = _vd_ohne_projekt_basis(fenster_id)
+    if not basis: return
+    cache, tabellenname, spalten, werte, parent = basis
+
+    try:
+        vb = sqlite_verbindung_oeffnen()
+        fks = vb.execute(
+            f"PRAGMA foreign_key_list({sql_identifier(tabellenname)})"
+        ).fetchall()  # id, seq, table, from, to, ...
+        vb.close()
+    except Exception as e:
+        messagebox.showerror("Vorwärts FK", str(e), parent=parent)
+        return
+
+    if not fks:
+        messagebox.showinfo("Vorwärts FK",
+            f"Tabelle '{tabellenname}' hat keine FOREIGN KEY-Constraints.\n\n"
+            "FKs können über Tabelle → Foreign Keys bearbeiten definiert werden.",
+            parent=parent)
+        return
+
+    win, sf, status = _vd_ergebnis_fenster(
+        f"Vorwärts FK – {tabellenname}", parent)
+    tk.Label(sf, text=f"Tabelle: {tabellenname}  |  "
+             + "  ".join(f"{spalten[i]}: {werte[i]}" for i in range(min(4, len(spalten)))),
+             font=("Consolas", 8), anchor="w", foreground="#555555").pack(fill="x")
+
+    gefunden = 0
+    for fk in fks:
+        quell_feld = fk[3]   # from
+        ziel_tab   = fk[2]   # table
+        ziel_feld  = fk[4]   # to
+        # Wert des QuellFelds aus der gewählten Zeile
+        try:
+            idx = spalten.index(quell_feld)
+            wert = werte[idx]
+        except ValueError:
+            continue
+        status.config(text=f"Suche in {ziel_tab} …")
+        win.update_idletasks()
+        try:
+            vb = sqlite_verbindung_oeffnen()
+            cols_info = [r[1] for r in vb.execute(
+                f"PRAGMA table_info({sql_identifier(ziel_tab)})"
+            ).fetchall()]
+            rows = vb.execute(
+                f"SELECT * FROM {sql_identifier(ziel_tab)} "
+                f"WHERE {sql_identifier(ziel_feld)} = ?", (wert,)
+            ).fetchall()
+            vb.close()
+        except Exception as e:
+            cols_info, rows = [], []
+        _vd_block_einfuegen(sf,
+            f"→ {ziel_tab}  (FK: {quell_feld} → {ziel_feld} = '{wert}')",
+            cols_info, rows)
+        gefunden += len(rows)
+
+    status.config(text=f"Fertig – {gefunden} Treffer in {len(fks)} FK-Constraint(s)")
+
+
+def tabellenfenster_vd_rueckwaerts_fk(fenster_id):
+    """Verknüpfte Datensätze: rückwärts – andere Tabellen haben FK auf diese Tabelle."""
+    basis = _vd_ohne_projekt_basis(fenster_id)
+    if not basis: return
+    cache, tabellenname, spalten, werte, parent = basis
+
+    try:
+        vb = sqlite_verbindung_oeffnen()
+        alle_tabellen = [r[0] for r in vb.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        ).fetchall()]
+        vb.close()
+    except Exception as e:
+        messagebox.showerror("Rückwärts FK", str(e), parent=parent)
+        return
+
+    win, sf, status = _vd_ergebnis_fenster(
+        f"Rückwärts FK – {tabellenname}", parent)
+    tk.Label(sf, text=f"Tabelle: {tabellenname}  |  "
+             + "  ".join(f"{spalten[i]}: {werte[i]}" for i in range(min(4, len(spalten)))),
+             font=("Consolas", 8), anchor="w", foreground="#555555").pack(fill="x")
+
+    gefunden = 0
+    treffer_tabellen = 0
+    for tab in alle_tabellen:
+        if tab.lower() == tabellenname.lower():
+            continue
+        status.config(text=f"Durchsuche {tab} …")
+        win.update_idletasks()
+        try:
+            vb = sqlite_verbindung_oeffnen()
+            fks = vb.execute(
+                f"PRAGMA foreign_key_list({sql_identifier(tab)})"
+            ).fetchall()
+            vb.close()
+        except Exception:
+            continue
+        # FKs die auf unsere Tabelle zeigen
+        for fk in fks:
+            if fk[2].lower() != tabellenname.lower():
+                continue
+            quell_feld = fk[3]   # from (in der anderen Tabelle)
+            ziel_feld  = fk[4]   # to   (in dieser Tabelle)
+            try:
+                idx = spalten.index(ziel_feld)
+                wert = werte[idx]
+            except ValueError:
+                continue
+            try:
+                vb = sqlite_verbindung_oeffnen()
+                cols_info = [r[1] for r in vb.execute(
+                    f"PRAGMA table_info({sql_identifier(tab)})"
+                ).fetchall()]
+                rows = vb.execute(
+                    f"SELECT * FROM {sql_identifier(tab)} "
+                    f"WHERE {sql_identifier(quell_feld)} = ?", (wert,)
+                ).fetchall()
+                vb.close()
+            except Exception:
+                cols_info, rows = [], []
+            _vd_block_einfuegen(sf,
+                f"← {tab}  (FK: {quell_feld} → {tabellenname}.{ziel_feld} = '{wert}')",
+                cols_info, rows, farbe="#AA5500")
+            gefunden += len(rows)
+            treffer_tabellen += 1
+
+    if treffer_tabellen == 0:
+        tk.Label(sf, text="Keine anderen Tabellen haben FK-Constraints auf diese Tabelle.",
+                 foreground="#888888", anchor="w").pack(fill="x", pady=8)
+    status.config(text=f"Fertig – {len(alle_tabellen)} Tabellen geprüft, "
+                       f"{gefunden} Treffer in {treffer_tabellen} Tabelle(n)")
+
+
+def tabellenfenster_vd_namenbasiert(fenster_id):
+    """Verknüpfte Datensätze: namenbasiert – alle Tabellen auf gleiche Spaltennamen + Wert."""
+    basis = _vd_ohne_projekt_basis(fenster_id)
+    if not basis: return
+    cache, tabellenname, spalten, werte, parent = basis
+
+    try:
+        vb = sqlite_verbindung_oeffnen()
+        alle_tabellen = [r[0] for r in vb.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+        ).fetchall()]
+        vb.close()
+    except Exception as e:
+        messagebox.showerror("Namenbasiert", str(e), parent=parent)
+        return
+
+    win, sf, status = _vd_ergebnis_fenster(
+        f"Namenbasiert – {tabellenname}", parent)
+    tk.Label(sf, text=f"Suche Spaltenname+Wert aus '{tabellenname}' in allen {len(alle_tabellen)} Tabellen",
+             font=("Consolas", 8), anchor="w", foreground="#555555").pack(fill="x")
+
+    gesamt_treffer = 0
+    gesamt_tabellen = 0
+    for tab in alle_tabellen:
+        if tab.lower() == tabellenname.lower():
+            continue
+        status.config(text=f"Durchsuche {tab} …")
+        win.update_idletasks()
+        try:
+            vb = sqlite_verbindung_oeffnen()
+            tab_cols = [r[1] for r in vb.execute(
+                f"PRAGMA table_info({sql_identifier(tab)})"
+            ).fetchall()]
+            vb.close()
+        except Exception:
+            continue
+        # Spalten die in beiden Tabellen vorkommen
+        gemeinsame = [(sp, werte[spalten.index(sp)])
+                      for sp in spalten if sp in tab_cols]
+        if not gemeinsame:
+            continue
+        for such_sp, such_wert in gemeinsame:
+            if such_wert is None or str(such_wert).strip() == "":
+                continue
+            try:
+                vb = sqlite_verbindung_oeffnen()
+                rows = vb.execute(
+                    f"SELECT * FROM {sql_identifier(tab)} "
+                    f"WHERE {sql_identifier(such_sp)} = ?", (such_wert,)
+                ).fetchall()
+                vb.close()
+            except Exception:
+                rows = []
+            if rows:
+                _vd_block_einfuegen(sf,
+                    f"≈ {tab}  (Spalte '{such_sp}' = '{such_wert}')",
+                    tab_cols, rows, farbe="#006600")
+                gesamt_treffer += len(rows)
+                gesamt_tabellen += 1
+
+    if gesamt_tabellen == 0:
+        tk.Label(sf,
+            text="Keine Übereinstimmungen in anderen Tabellen gefunden.\n"
+                 "(Nur Spalten mit gleichem Namen und gleichem Wert werden gesucht.)",
+            foreground="#888888", anchor="w", justify="left").pack(fill="x", pady=8)
+    status.config(text=f"Fertig – {len(alle_tabellen)} Tabellen geprüft, "
+                       f"{gesamt_treffer} Treffer in {gesamt_tabellen} Tabelle(n)")
 
 
 def tabellenfenster_verknuepfte_datensaetze_anzeigen(fenster_id):
