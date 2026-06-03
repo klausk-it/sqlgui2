@@ -3853,7 +3853,8 @@ def tabellenfenster_vd_rueckwaerts_fk(fenster_id):
 
 
 def tabellenfenster_vd_namenbasiert(fenster_id):
-    """Verknüpfte Datensätze: namenbasiert – alle Tabellen auf gleiche Spaltennamen + Wert."""
+    """Verknüpfte Datensätze: namenbasiert – alle Tabellen auf gleiche Spaltennamen + Wert.
+    Ergebnisse werden gesammelt und können nach Tabelle oder nach Spalte sortiert angezeigt werden."""
     basis = _vd_ohne_projekt_basis(fenster_id)
     if not basis: return
     cache, tabellenname, spalten, werte, parent = basis
@@ -3868,17 +3869,107 @@ def tabellenfenster_vd_namenbasiert(fenster_id):
         messagebox.showerror("Namenbasiert", str(e), parent=parent)
         return
 
-    win, sf, status = _vd_ergebnis_fenster(
-        f"Namenbasiert – {tabellenname}", parent)
-    tk.Label(sf, text=f"Suche Spaltenname+Wert aus '{tabellenname}' in allen {len(alle_tabellen)} Tabellen",
-             font=("Consolas", 8), anchor="w", foreground="#555555").pack(fill="x")
+    # ── Scan: alle Treffer sammeln ────────────────────────────────────────
+    # Jeder Treffer: {"spalte": str, "tabelle": str, "cols": list, "rows": list, "wert": str}
+    treffer_liste = []
 
-    gesamt_treffer = 0
-    gesamt_tabellen = 0
+    win = tk.Toplevel(parent)
+    win.title(f"Namenbasiert – {tabellenname}")
+    win.geometry("900x620")
+    win.minsize(400, 250)
+    fenster_registrieren(win, "VD-ohne-Projekt")
+    fenster_standard_menue_anbringen(win, "900x620", f"Namenbasiert – {tabellenname}")
+
+    # Kopfzeile
+    kopf_frm = tk.Frame(win)
+    kopf_frm.pack(fill="x", padx=8, pady=(4, 0))
+    tk.Label(kopf_frm,
+             text=f"Suche Spaltenname+Wert aus '{tabellenname}' in allen {len(alle_tabellen)} Tabellen",
+             font=("Consolas", 8), anchor="w", foreground="#555555").pack(side="left")
+
+    # Sortier-Buttons (erst nach dem Scan aktiv)
+    sort_var = tk.StringVar(value="tabelle")
+    sort_frm = tk.Frame(win)
+    sort_frm.pack(fill="x", padx=8, pady=(2, 0))
+    tk.Label(sort_frm, text="Sortierung:").pack(side="left")
+    rb_tab = tk.Radiobutton(sort_frm, text="Nach Tabelle", variable=sort_var,
+                             value="tabelle", state="disabled")
+    rb_sp  = tk.Radiobutton(sort_frm, text="Nach Spalte",  variable=sort_var,
+                             value="spalte",  state="disabled")
+    rb_tab.pack(side="left", padx=(6, 0))
+    rb_sp.pack(side="left", padx=(4, 0))
+
+    status_lbl = tk.Label(win, text="", anchor="w",
+                           font=("Segoe UI", 8), foreground="#666666")
+    status_lbl.pack(fill="x", padx=8)
+
+    # Scroll-Bereich
+    outer = tk.Frame(win)
+    outer.pack(fill="both", expand=True, padx=8, pady=4)
+    canvas = tk.Canvas(outer, borderwidth=0, highlightthickness=0)
+    vsb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+    canvas.configure(yscrollcommand=vsb.set)
+    vsb.pack(side="right", fill="y")
+    canvas.pack(side="left", fill="both", expand=True)
+    sf_container = [None]   # hält den aktuellen scroll_frame
+
+    def _sf_neu():
+        if sf_container[0]:
+            sf_container[0].destroy()
+        sf = tk.Frame(canvas)
+        sf_container[0] = sf
+        sf_id = canvas.create_window((0, 0), window=sf, anchor="nw")
+        def _on_cfg(e):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+            canvas.itemconfig(sf_id, width=canvas.winfo_width())
+        sf.bind("<Configure>", _on_cfg)
+        canvas.bind("<Configure>", lambda e: canvas.itemconfig(sf_id, width=e.width))
+        return sf
+
+    def _mwheel(e): canvas.yview_scroll(int(-1*(e.delta/120)), "units")
+    canvas.bind_all("<MouseWheel>", _mwheel)
+
+    def _rendern(sortierung):
+        sf = _sf_neu()
+        canvas.yview_moveto(0)
+        if not treffer_liste:
+            tk.Label(sf,
+                text="Keine Übereinstimmungen gefunden.\n"
+                     "(Nur Spalten mit gleichem Namen und gleichem Wert werden gesucht.)",
+                foreground="#888888", anchor="w", justify="left").pack(fill="x", pady=8)
+            return
+        if sortierung == "tabelle":
+            # Gruppieren nach Tabelle
+            gruppen = {}
+            for t in treffer_liste:
+                gruppen.setdefault(t["tabelle"], []).append(t)
+            for tab, eintraege in sorted(gruppen.items()):
+                for e in eintraege:
+                    _vd_block_einfuegen(sf,
+                        f"≈ {e['tabelle']}  (Spalte '{e['spalte']}' = '{e['wert']}')",
+                        e["cols"], e["rows"], farbe="#006600")
+        else:
+            # Gruppieren nach Spalte
+            gruppen = {}
+            for t in treffer_liste:
+                gruppen.setdefault(t["spalte"], []).append(t)
+            for sp, eintraege in sorted(gruppen.items()):
+                tk.Label(sf, text=f"Spalte: {sp}  (Wert: '{eintraege[0]['wert']}')",
+                         font=("Segoe UI", 10, "bold"), foreground="#004488",
+                         anchor="w").pack(fill="x", pady=(10, 2))
+                for e in sorted(eintraege, key=lambda x: x["tabelle"]):
+                    _vd_block_einfuegen(sf,
+                        f"≈ {e['tabelle']}",
+                        e["cols"], e["rows"], farbe="#006600")
+
+    sort_var.trace_add("write", lambda *_: _rendern(sort_var.get()))
+
+    # ── Scan durchführen ──────────────────────────────────────────────────
+    sf = _sf_neu()
     for tab in alle_tabellen:
         if tab.lower() == tabellenname.lower():
             continue
-        status.config(text=f"Durchsuche {tab} …")
+        status_lbl.config(text=f"Durchsuche {tab} …")
         win.update_idletasks()
         try:
             vb = sqlite_verbindung_oeffnen()
@@ -3888,7 +3979,6 @@ def tabellenfenster_vd_namenbasiert(fenster_id):
             vb.close()
         except Exception:
             continue
-        # Spalten die in beiden Tabellen vorkommen
         gemeinsame = [(sp, werte[spalten.index(sp)])
                       for sp in spalten if sp in tab_cols]
         if not gemeinsame:
@@ -3906,19 +3996,21 @@ def tabellenfenster_vd_namenbasiert(fenster_id):
             except Exception:
                 rows = []
             if rows:
-                _vd_block_einfuegen(sf,
-                    f"≈ {tab}  (Spalte '{such_sp}' = '{such_wert}')",
-                    tab_cols, rows, farbe="#006600")
-                gesamt_treffer += len(rows)
-                gesamt_tabellen += 1
+                treffer_liste.append({
+                    "spalte":   such_sp,
+                    "tabelle":  tab,
+                    "cols":     tab_cols,
+                    "rows":     rows,
+                    "wert":     str(such_wert),
+                })
 
-    if gesamt_tabellen == 0:
-        tk.Label(sf,
-            text="Keine Übereinstimmungen in anderen Tabellen gefunden.\n"
-                 "(Nur Spalten mit gleichem Namen und gleichem Wert werden gesucht.)",
-            foreground="#888888", anchor="w", justify="left").pack(fill="x", pady=8)
-    status.config(text=f"Fertig – {len(alle_tabellen)} Tabellen geprüft, "
-                       f"{gesamt_treffer} Treffer in {gesamt_tabellen} Tabelle(n)")
+    n_treffer = sum(len(t["rows"]) for t in treffer_liste)
+    n_tabellen = len({t["tabelle"] for t in treffer_liste})
+    status_lbl.config(text=f"Fertig – {len(alle_tabellen)} Tabellen geprüft, "
+                           f"{n_treffer} Treffer in {n_tabellen} Tabelle(n)")
+    rb_tab.config(state="normal")
+    rb_sp.config(state="normal")
+    _rendern("tabelle")
 
 
 def tabellenfenster_verknuepfte_datensaetze_anzeigen(fenster_id):
