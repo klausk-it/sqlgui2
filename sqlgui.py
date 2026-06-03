@@ -3945,8 +3945,13 @@ def tabellenfenster_vd_namenbasiert(fenster_id):
         canvas.bind("<Configure>", lambda e: canvas.itemconfig(sf_id, width=e.width))
         return sf
 
-    def _mwheel(e): canvas.yview_scroll(int(-1*(e.delta/120)), "units")
-    canvas.bind_all("<MouseWheel>", _mwheel)
+    def _mwheel(e):
+        try:
+            canvas.yview_scroll(int(-1*(e.delta/120)), "units")
+        except Exception:
+            pass
+    _mwheel_id = canvas.bind_all("<MouseWheel>", _mwheel)
+    win.bind("<Destroy>", lambda e: canvas.unbind_all("<MouseWheel>") if e.widget is win else None)
 
     # ── Rendern ────────────────────────────────────────────────────────────
     aktiver_filter = [None]   # None = alle, sonst Spaltenname
