@@ -4051,14 +4051,14 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         m.add_command(label="Feldfilter setzen",             command=filter_dialog_oeffnen)
         m.add_command(label="Feldfilter aufheben",           command=filter_aufheben)
         m.add_command(label="Eindeutige Feldwerte anzeigen", command=eindeutige_werte_anzeigen)
-        if ip_filter_fn:
-            m.add_command(label="Auf IP/Netzwerk filtern", command=ip_filter_fn)
-        else:
-            m.add_command(label="Auf IP/Netzwerk filtern", state="disabled")
-        if maske_filter_fn:
-            m.add_command(label="Auf Netzmaske filtern", command=maske_filter_fn)
-        else:
-            m.add_command(label="Auf Netzmaske filtern", state="disabled")
+        m.add_command(label="Auf IP/Netzwerk filtern",
+            command=ip_filter_fn if ip_filter_fn else
+                lambda: messagebox.showinfo("IP-Filter",
+                    "IP-Filter ist in diesem Fenstertyp nicht verfügbar.", parent=parent_win))
+        m.add_command(label="Auf Netzmaske filtern",
+            command=maske_filter_fn if maske_filter_fn else
+                lambda: messagebox.showinfo("Netzmaske-Filter",
+                    "Netzmaske-Filter ist in diesem Fenstertyp nicht verfügbar.", parent=parent_win))
         m.add_separator()
         # Block 4: IP / Netzwerk
         m.add_command(label="IP-Range aufteilen",                    command=ip_range_aufteilen_lokal)
@@ -4074,23 +4074,23 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         m.add_command(label="Finding hinzufügen",              command=finding_hinzufuegen)
         # Block 5b: Verknüpfte Datensätze
         m.add_separator()
-        if vd_projekt_fn:
-            m.add_command(label="Verknüpfte Datensätze anzeigen", command=vd_projekt_fn)
-        else:
-            m.add_command(label="Verknüpfte Datensätze anzeigen", state="disabled")
+        _vd_info = lambda: messagebox.showinfo("Verknüpfte Datensätze",
+            "Verknüpfte Datensätze ist nur in Tabellenfenstern verfügbar\n"
+            "(Voraussetzung: aktives Projekt mit definierten Beziehungen).", parent=parent_win)
+        _vd_fk_info = lambda: messagebox.showinfo("Verknüpfte Datensätze",
+            "FK-basierte Suche ist nur in Tabellenfenstern verfügbar.", parent=parent_win)
+        m.add_command(label="Verknüpfte Datensätze anzeigen",
+            command=vd_projekt_fn if vd_projekt_fn else _vd_info)
         sub_vd = tk.Menu(m, tearoff=0)
         sub_vd.add_command(
             label="Vorwärts über FKs  (diese Tabelle → Ziel)",
-            command=vd_fk_vor_fn if vd_fk_vor_fn else lambda: None,
-            state="normal" if vd_fk_vor_fn else "disabled")
+            command=vd_fk_vor_fn if vd_fk_vor_fn else _vd_fk_info)
         sub_vd.add_command(
             label="Rückwärts über FKs  (wer zeigt auf diese Tabelle?)",
-            command=vd_fk_rueck_fn if vd_fk_rueck_fn else lambda: None,
-            state="normal" if vd_fk_rueck_fn else "disabled")
+            command=vd_fk_rueck_fn if vd_fk_rueck_fn else _vd_fk_info)
         sub_vd.add_command(
             label="Namenbasiert  (alle Tabellen durchsuchen)",
-            command=vd_namen_fn if vd_namen_fn else lambda: None,
-            state="normal" if vd_namen_fn else "disabled")
+            command=vd_namen_fn if vd_namen_fn else _vd_fk_info)
         m.add_cascade(label="Verknüpfte Datensätze (ohne Projekt)  ▶", menu=sub_vd)
         # Block 6: Zeile löschen / Feld editieren
         if db_edit:
