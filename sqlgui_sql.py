@@ -1170,8 +1170,12 @@ def _tv_spalten_auto_breite(tv, spalten_sichtbar, zeilen, pad_kopf=24, pad_daten
 
 def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
                                       sql_text_hint=None, extra_menue_fn=None,
-                                      db_edit=True, nav_override_fn=None):
-    """Bindet das vollständige 6-Block Rechtsklick-Menü an tv_widget.
+                                      db_edit=True, nav_override_fn=None,
+                                      ip_filter_fn=None, maske_filter_fn=None,
+                                      vd_projekt_fn=None, vd_fk_vor_fn=None,
+                                      vd_fk_rueck_fn=None, vd_namen_fn=None,
+                                      on_selection_fn=None):
+    """Bindet das vollständige universelle Rechtsklick-Menü an tv_widget.
 
     Gibt ein zeilen_ref-Dict zurück; der Caller befüllt zeilen_ref['alle']
     nach jedem Datenladen (wird für Filter-Aufheben benötigt).
@@ -3928,6 +3932,79 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         sql_text_im_lesefenster_anzeigen(
             parent_win, f"Vorherige Tabelle: {_vt_qt}", _txt_vt)
 
+    # ── Block 4 Zusatz: Integer↔IPv4, Netzwerk IP/Maske ─────────────────────────
+    def _ipv4_zu_int(ip):
+        try:
+            p = [int(x) for x in ip.strip().split(".")]
+            if len(p) != 4 or any(x < 0 or x > 255 for x in p):
+                return None
+            return (p[0]<<24)|(p[1]<<16)|(p[2]<<8)|p[3]
+        except Exception:
+            return None
+
+    def _int_zu_ipv4(z):
+        return f"{(z>>24)&0xFF}.{(z>>16)&0xFF}.{(z>>8)&0xFF}.{z&0xFF}"
+
+    def integer_zu_ipv4():
+        iid = _lok["item"]
+        idx = _sp_idx()
+        if not iid or idx is None:
+            messagebox.showwarning("Integer → IPv4", "Bitte zuerst eine Zelle auswählen.", parent=parent_win)
+            return
+        fv = str(tv_widget.item(iid, "values")[idx]).strip()
+        try:
+            z = int(fv)
+            ip = _int_zu_ipv4(z)
+            sql_text_im_lesefenster_anzeigen(parent_win, "Integer → IPv4",
+                f"Wert:    {fv}\nIPv4:    {ip}\nHex:     0x{z:08X}")
+        except Exception:
+            messagebox.showwarning("Integer → IPv4",
+                f"'{fv}' ist keine gültige Ganzzahl.", parent=parent_win)
+
+    def ipv4_zu_integer():
+        iid = _lok["item"]
+        idx = _sp_idx()
+        if not iid or idx is None:
+            messagebox.showwarning("IPv4 → Integer", "Bitte zuerst eine Zelle auswählen.", parent=parent_win)
+            return
+        fv = str(tv_widget.item(iid, "values")[idx]).strip()
+        z = _ipv4_zu_int(fv)
+        if z is None:
+            messagebox.showwarning("IPv4 → Integer",
+                f"'{fv}' ist keine gültige IPv4-Adresse.", parent=parent_win)
+            return
+        sql_text_im_lesefenster_anzeigen(parent_win, "IPv4 → Integer",
+            f"IPv4:      {fv}\nInteger:   {z}\nHex:       0x{z:08X}")
+
+    def netzwerk_ip_anzeigen():
+        iid = _lok["item"]
+        idx = _sp_idx()
+        if not iid or idx is None:
+            messagebox.showwarning("Netzwerk IP/Maske", "Bitte zuerst eine Zelle auswählen.", parent=parent_win)
+            return
+        fv = str(tv_widget.item(iid, "values")[idx]).strip()
+        import re as _re_nw
+        # CIDR: 10.0.0.0/24 → Netzwerk-IP und Maske berechnen
+        m = _re_nw.match(r'^(\d+\.\d+\.\d+\.\d+)/(\d+)$', fv)
+        if m:
+            ip_i = _ipv4_zu_int(m.group(1))
+            prefix = int(m.group(2))
+            if ip_i is not None and 0 <= prefix <= 32:
+                maske_i = (0xFFFFFFFF << (32 - prefix)) & 0xFFFFFFFF if prefix < 32 else 0xFFFFFFFF
+                netz_i  = ip_i & maske_i
+                sql_text_im_lesefenster_anzeigen(parent_win, "Netzwerk IP/Maske",
+                    f"Eingabe:       {fv}\nNetzwerk-IP:   {_int_zu_ipv4(netz_i)}\n"
+                    f"Subnetzmaske:  {_int_zu_ipv4(maske_i)}\nPrefix:        /{prefix}")
+                return
+        # Nur IP ohne Maske
+        ip_i = _ipv4_zu_int(fv)
+        if ip_i is not None:
+            sql_text_im_lesefenster_anzeigen(parent_win, "Netzwerk IP/Maske",
+                f"Eingabe: {fv}\n(Keine Maske angegeben – keine Netzwerkberechnung möglich)")
+            return
+        messagebox.showwarning("Netzwerk IP/Maske",
+            f"'{fv}' ist keine erkannte IP-Adresse oder CIDR-Notation.", parent=parent_win)
+
     # ── Rechtsklick-Event ────────────────────────────────────────────────────
     def rechtsklick(event):
         region = tv_widget.identify_region(event.x, event.y)
@@ -3946,6 +4023,8 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
             tv_widget.selection_set(item_id)
         _lok["item"]   = item_id
         _lok["spalte"] = spalte_id
+        if callable(on_selection_fn):
+            on_selection_fn(item_id, spalte_id)
         m = tk.Menu(parent_win, tearoff=0)
         # Optionale benutzerdefinierte Einträge zuerst (SQL-Editor-spezifische Aktionen)
         if callable(extra_menue_fn):
@@ -3972,16 +4051,47 @@ def standard_tv_rechtsklick_anbinden(tv_widget, tabellenname, parent_win,
         m.add_command(label="Feldfilter setzen",             command=filter_dialog_oeffnen)
         m.add_command(label="Feldfilter aufheben",           command=filter_aufheben)
         m.add_command(label="Eindeutige Feldwerte anzeigen", command=eindeutige_werte_anzeigen)
+        if ip_filter_fn:
+            m.add_command(label="Auf IP/Netzwerk filtern", command=ip_filter_fn)
+        else:
+            m.add_command(label="Auf IP/Netzwerk filtern", state="disabled")
+        if maske_filter_fn:
+            m.add_command(label="Auf Netzmaske filtern", command=maske_filter_fn)
+        else:
+            m.add_command(label="Auf Netzmaske filtern", state="disabled")
         m.add_separator()
         # Block 4: IP / Netzwerk
         m.add_command(label="IP-Range aufteilen",                    command=ip_range_aufteilen_lokal)
         m.add_command(label="IP / Netz vollständig analysieren",   command=ip_vollstaendig_analysieren)
         m.add_command(label="Überschneidungen in Spalte suchen",   command=ip_ueberschneidungen_suchen)
         m.add_command(label="Überschneidungen in Kette suchen",    command=ip_ueberschneidungen_in_kette_suchen)
+        m.add_command(label="Integer zu IPv4-Adresse",             command=integer_zu_ipv4)
+        m.add_command(label="IPv4-Adresse zu Integer",             command=ipv4_zu_integer)
+        m.add_command(label="Netzwerk IP oder Maske anzeigen",     command=netzwerk_ip_anzeigen)
         m.add_separator()
         # Block 5: Finding
         m.add_command(label="Finding aufrufen",                command=finding_aufrufen)
         m.add_command(label="Finding hinzufügen",              command=finding_hinzufuegen)
+        # Block 5b: Verknüpfte Datensätze
+        m.add_separator()
+        if vd_projekt_fn:
+            m.add_command(label="Verknüpfte Datensätze anzeigen", command=vd_projekt_fn)
+        else:
+            m.add_command(label="Verknüpfte Datensätze anzeigen", state="disabled")
+        sub_vd = tk.Menu(m, tearoff=0)
+        sub_vd.add_command(
+            label="Vorwärts über FKs  (diese Tabelle → Ziel)",
+            command=vd_fk_vor_fn if vd_fk_vor_fn else lambda: None,
+            state="normal" if vd_fk_vor_fn else "disabled")
+        sub_vd.add_command(
+            label="Rückwärts über FKs  (wer zeigt auf diese Tabelle?)",
+            command=vd_fk_rueck_fn if vd_fk_rueck_fn else lambda: None,
+            state="normal" if vd_fk_rueck_fn else "disabled")
+        sub_vd.add_command(
+            label="Namenbasiert  (alle Tabellen durchsuchen)",
+            command=vd_namen_fn if vd_namen_fn else lambda: None,
+            state="normal" if vd_namen_fn else "disabled")
+        m.add_cascade(label="Verknüpfte Datensätze (ohne Projekt)  ▶", menu=sub_vd)
         # Block 6: Zeile löschen / Feld editieren
         if db_edit:
             m.add_separator()
@@ -10435,59 +10545,10 @@ def sql_abfrage_fenster_oeffnen():
                         sql_logging_eintrag_sicher_schreiben(f"Fehler beim Speichern des Findings: {e}", 1)
                         messagebox.showerror("Finding hinzufügen", f"Fehler:\n{e}", parent=res)
 
-                def ergebnis_rechtsklick(event):
-                    region = tv.identify_region(event.x, event.y)
-                    if region == "heading":
-                        menu = tk.Menu(res, tearoff=0)
-                        _tv_spalten_menue_aufbauen(menu, tv,
-                                                   lambda: tree_spalten_breiten_anpassen(tv))
-                        try:
-                            menu.tk_popup(event.x_root, event.y_root)
-                        finally:
-                            menu.grab_release()
-                        return
-                    item_id = tv.identify_row(event.y)
-                    spalte_id = tv.identify_column(event.x)
-                    if item_id:
-                        tv.focus(item_id)
-                        tv.selection_set(item_id)
-                    ergebnis_cache["kontext_item_id"] = item_id
-                    ergebnis_cache["kontext_spalte_id"] = spalte_id
-                    menu = tk.Menu(res, tearoff=0)
-                    # Block 1: Kopieren
-                    menu.add_command(label="Feldinhalt kopieren", command=ergebnis_feld_in_zwischenablage)
-                    menu.add_command(label="Zeile kopieren", command=ergebnis_zeile_in_zwischenablage)
-                    menu.add_command(label="Zeile als CSV kopieren", command=ergebnis_zeile_als_csv_in_zwischenablage)
-                    menu.add_command(label="Header als CSV kopieren", command=ergebnis_header_als_csv_in_zwischenablage)
-                    menu.add_command(label="Tabelle als CSV kopieren", command=ergebnis_tabelle_als_csv_kopieren)
-                    menu.add_separator()
-                    # Block 2: Anzeigen
-                    menu.add_command(label="Feldinhalt im Lesefenster anzeigen", command=ergebnis_feld_im_lesefenster_anzeigen)
-                    menu.add_command(label="Zeile im Lesefenster anzeigen", command=ergebnis_zeile_im_lesefenster_anzeigen)
-                    menu.add_command(label="Daten optimal",                  command=lambda: tree_spalten_breiten_anpassen(tv))
-                    menu.add_command(label="Spaltennamen optimal",           command=lambda: _tv_spalten_minimum(tv))
-                    menu.add_command(label="Alle Spaltennamen vollständig anzeigen",
-                                     command=lambda: tree_spalten_breiten_anpassen(tv))
-                    menu.add_separator()
-                    # Block 3: Filtern
-                    menu.add_command(label="Feldfilter setzen", command=ergebnis_filter_dialog_oeffnen)
-                    menu.add_command(label="Feldfilter aufheben", command=ergebnis_filter_aufheben)
-                    menu.add_command(label="Eindeutige Feldwerte anzeigen", command=ergebnis_eindeutige_werte_anzeigen)
-                    menu.add_separator()
-                    # Block 4: IPv4
-                    menu.add_command(label="Integer zu IPv4-Adresse", command=ergebnis_integer_zu_ipv4)
-                    menu.add_command(label="IPv4-Adresse zu Integer", command=ergebnis_ipv4_zu_integer)
-                    menu.add_command(label="IP-Range aufteilen", command=ergebnis_ip_range_aufteilen)
-                    menu.add_command(label="Netzwerk IP oder Maske anzeigen", command=ergebnis_netzwerk_ip_anzeigen)
-                    menu.add_separator()
-                    # Block 5: Findings
-                    menu.add_command(label="Finding hinzufügen", command=ergebnis_finding_manuell_hinzufuegen)
-                    try:
-                        menu.tk_popup(event.x_root, event.y_root)
-                    finally:
-                        menu.grab_release()
-
-                tv.bind("<Button-3>", ergebnis_rechtsklick)
+                _erg_ref = standard_tv_rechtsklick_anbinden(
+                    tv, fenster_suffix, res,
+                    sql_text_hint=sql_text, db_edit=False)
+                _erg_ref["alle"] = list(zeilen)
                 ergebnis_anzeigen()
                 # Menüeinträge ergänzen
                 res_menue.add_command(label="Als Tabelle speichern", command=ergebnis_aktuelle_anzeige_als_tabelle_speichern)
