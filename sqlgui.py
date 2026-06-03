@@ -3879,18 +3879,15 @@ def tabellenfenster_vd_namenbasiert(fenster_id):
     win.minsize(500, 300)
     fenster_registrieren(win, "VD-ohne-Projekt")
     fenster_standard_menue_anbringen(win, "1050x650", f"Namenbasiert – {tabellenname}")
-    win.columnconfigure(0, weight=1)
-    win.rowconfigure(2, weight=1)
-
     # ── Kopfzeile ─────────────────────────────────────────────────────────
     tk.Label(win,
         text=f"Suche Spaltenname+Wert aus '{tabellenname}' in allen {len(alle_tabellen)} Tabellen",
         font=("Consolas", 8), anchor="w", foreground="#555555"
-    ).grid(row=0, column=0, sticky="ew", padx=8, pady=(4, 0))
+    ).pack(fill="x", padx=8, pady=(4, 0))
 
     # ── Sortierung + Status ────────────────────────────────────────────────
     ctrl_frm = tk.Frame(win)
-    ctrl_frm.grid(row=1, column=0, sticky="ew", padx=8, pady=(2, 0))
+    ctrl_frm.pack(fill="x", padx=8, pady=(2, 0))
     tk.Label(ctrl_frm, text="Sortierung:").pack(side="left")
     sort_var = tk.StringVar(value="tabelle")
     rb_tab = tk.Radiobutton(ctrl_frm, text="Nach Tabelle", variable=sort_var,
@@ -3906,7 +3903,7 @@ def tabellenfenster_vd_namenbasiert(fenster_id):
     # ── Haupt-PanedWindow: links Spalten, rechts Ergebnisse ───────────────
     paned = tk.PanedWindow(win, orient="horizontal", sashwidth=5,
                             sashrelief="raised", bg="#aaaaaa")
-    paned.grid(row=2, column=0, sticky="nsew", padx=8, pady=4)
+    paned.pack(fill="both", expand=True, padx=8, pady=4)
 
     # Linkes Panel: Spalten-Listbox
     left_frm = tk.Frame(paned, width=160)
