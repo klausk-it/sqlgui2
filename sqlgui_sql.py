@@ -1,4 +1,4 @@
-"""SQL-Hilfsmodul fuer SqlGui Version 4.6.51.
+"""SQL-Hilfsmodul fuer SqlGui Version 4.6.52.
 
 Dieses Modul enthaelt den SQL-spezifischen Programmteil:
 - SQL-Abfragen-Tabelle

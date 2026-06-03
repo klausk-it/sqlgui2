@@ -3,7 +3,7 @@ SqlGui - bereinigte Hauptdatei mit einem einzigen CSV-Pfad.
 Fokus: DB-Grundfunktionen, CSV-Vorschau und CSV-Rechtsklickmenü mit Word Wrap.
 """
 
-__version__ = "4.6.51"
+__version__ = "4.6.52"
 G_HELP_INFO = f"SQL-GUI {__version__}"
 
 import csv
