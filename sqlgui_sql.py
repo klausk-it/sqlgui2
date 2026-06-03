@@ -841,6 +841,91 @@ def _export_verzeichnis():
     return export
 
 
+def sql_template_aufloesen(sql_text, db_datei=None):
+    """Löst SQL Templates in einem SQL-Statement auf.
+
+    Unterstützte Templates:
+      {DATE}        – Aktuelles Datum (YYYY_MM_DD)
+      {TIME}        – Aktuelle Uhrzeit (HH_MM_SS)
+      {DATETIME}    – Datum + Uhrzeit (YYYY_MM_DD_HH_MM_SS)
+      {DB}          – Name der Datenbank (wie in der Titelleiste)
+      {COUNT: SQL}  – Ergebnis eines COUNT-Statements (Ganzzahl)
+      {SCALAR: SQL} – Ergebnis eines einzelnen Wertes
+
+    Gibt (aufgeloestes_sql, log_text_oder_None) zurück.
+    Wirft ValueError bei Fehler im Inner-SQL.
+    """
+    import re as _re
+    import datetime as _dt
+    from pathlib import Path as _Path
+
+    if "{" not in sql_text:
+        return sql_text, None   # Keine Templates → sofort zurück
+
+    def _bereinigen(wert):
+        """Bereinigt Wert für Verwendung in SQL-Bezeichnern: nur [A-Za-z0-9_]."""
+        return _re.sub(r"[^A-Za-z0-9_]", "_", str(wert))
+
+    log_zeilen = ["SQL Templates erkannt und aufgelöst:"]
+    result = sql_text
+    jetzt = _dt.datetime.now()
+
+    # ── Einfache Templates ────────────────────────────────────────────────────
+    einfache = {
+        "{DATE}":     _bereinigen(jetzt.strftime("%Y-%m-%d")),
+        "{TIME}":     _bereinigen(jetzt.strftime("%H:%M:%S")),
+        "{DATETIME}": _bereinigen(jetzt.strftime("%Y-%m-%d %H:%M:%S")),
+        "{DB}":       _bereinigen(
+            _Path(db_datei).name if db_datei else "UnbekannteDB"
+        ),
+    }
+    for tmpl, wert in einfache.items():
+        if tmpl in result:
+            result = result.replace(tmpl, wert)
+            log_zeilen.append(f"  • {tmpl}  →  {wert}")
+
+    # ── COUNT und SCALAR (ggf. mehrzeiliger Inner-SQL) ────────────────────────
+    pat = _re.compile(
+        r"\{(COUNT|SCALAR):\s*(.*?)\}",
+        _re.DOTALL | _re.IGNORECASE,
+    )
+
+    fehler = []
+
+    def _ersetzen(m):
+        art      = m.group(1).upper()
+        inner    = m.group(2).strip()
+        tmpl_roh = "{" + art + ": " + inner[:60].replace("\n", " ") + ("…" if len(inner) > 60 else "") + "}"
+        try:
+            vb  = sqlite_verbindung_oeffnen()
+            row = vb.execute(inner).fetchone()
+            vb.close()
+            roh_wert = row[0] if row else ("0" if art == "COUNT" else "")
+            wert     = _bereinigen(str(roh_wert))
+            log_zeilen.append(
+                "  \u2022 " + "{" + art + ": \u2026}  \u2192  " + wert + "\n"
+                + "      Inner-SQL: " + inner[:80].strip()
+                + ("\u2026" if len(inner) > 80 else "") + "\n"
+                + "      Rohwert:   " + str(roh_wert)
+            )
+            return wert
+        except Exception as e:
+            fehler.append(
+                f"{{{art}}} Fehler: {e}\nInner-SQL: {inner[:120]}"
+            )
+            return m.group(0)   # Original unverändert lassen
+
+    result = pat.sub(_ersetzen, result)
+
+    if fehler:
+        raise ValueError(
+            "SQL Template-Fehler:\n\n" + "\n\n".join(fehler)
+        )
+
+    log_text = "\n".join(log_zeilen) if len(log_zeilen) > 1 else None
+    return result, log_text
+
+
 def sql_modul_initialisieren(
     root_widget,
     exe_title,
@@ -4616,9 +4701,19 @@ def _workflow_abfrage_fenster_oeffnen_modul(abfragename):
 
     def abfrage_ausfuehren():
         try:
+            # SQL Templates auflösen
+            try:
+                _sql_eff, _wf_tmpl_log = sql_template_aufloesen(
+                    sql_text, get_geladene_db_datei())
+                if _wf_tmpl_log:
+                    sql_logging_eintrag_sicher_schreiben(_wf_tmpl_log, 0)
+            except ValueError as _wf_err:
+                messagebox.showerror("SQL Template-Fehler",
+                    str(_wf_err), parent=res)
+                return
             verbindung = sqlite_verbindung_mit_udf_oeffnen(get_geladene_db_datei())
             cursor = verbindung.cursor()
-            cursor.execute(sql_text)
+            cursor.execute(_sql_eff)
             spalten = [desc[0] for desc in cursor.description] if cursor.description else []
             zeilen = cursor.fetchall()
             verbindung.close()
@@ -9469,6 +9564,17 @@ def sql_abfrage_fenster_oeffnen():
 
         # Vorab-Prüfungen vor SQLite-Befragung
         sql_upper = " ".join(sql_text.upper().split())
+        # ── SQL Templates auflösen ─────────────────────────────
+        try:
+            sql_text, _tmpl_log = sql_template_aufloesen(
+                sql_text, get_geladene_db_datei())
+            if _tmpl_log:
+                sql_logging_eintrag_sicher_schreiben(_tmpl_log, 0)
+        except ValueError as _tmpl_err:
+            messagebox.showerror("SQL Template-Fehler",
+                str(_tmpl_err), parent=top)
+            return
+        # ── SQL-Typ bestimmen ───────────────────────────────────
         sql_typ = ""
         for _z in sql_text.splitlines():
             _zs = _z.strip()
@@ -9580,6 +9686,17 @@ def sql_abfrage_fenster_oeffnen():
             )
             if not sql_text:
                 return
+        # ── SQL Templates auflösen ─────────────────────────────
+        try:
+            sql_text, _tmpl_log = sql_template_aufloesen(
+                sql_text, get_geladene_db_datei())
+            if _tmpl_log:
+                sql_logging_eintrag_sicher_schreiben(_tmpl_log, 0)
+        except ValueError as _tmpl_err:
+            messagebox.showerror("SQL Template-Fehler",
+                str(_tmpl_err), parent=top)
+            return
+        # ── SQL-Typ bestimmen ───────────────────────────────────
         sql_typ = ""
         for _z in sql_text.splitlines():
             _zs = _z.strip()
