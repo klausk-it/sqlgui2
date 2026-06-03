@@ -4053,19 +4053,21 @@ def tabellenfenster_vd_namenbasiert(fenster_id):
                     "wert":    str(such_wert),
                 })
 
-    # ── Spalten-Listbox füllen ─────────────────────────────────────────────
-    gefundene_spalten = sorted({t["spalte"] for t in treffer_liste})
+    # ── Spalten-Listbox füllen – ALLE Spalten der Quellzeile ─────────────
+    # Auch Spalten ohne Treffer erscheinen (mit 0 Treffern)
     sp_lb.insert("end", "— Alle —")
-    for sp in gefundene_spalten:
+    for sp in spalten:
+        wert_sp = werte[spalten.index(sp)] if sp in spalten else ""
         n = sum(len(t["rows"]) for t in treffer_liste if t["spalte"] == sp)
         sp_lb.insert("end", f"{sp}  ({n} Treffer)")
     sp_lb.selection_set(0)
 
     n_treffer  = sum(len(t["rows"]) for t in treffer_liste)
     n_tabellen = len({t["tabelle"] for t in treffer_liste})
+    gefundene_spalten = {t["spalte"] for t in treffer_liste}
     status_lbl.config(
         text=f"Fertig – {len(alle_tabellen)} Tabellen, "
-             f"{n_treffer} Treffer, {len(gefundene_spalten)} Spalte(n)")
+             f"{n_treffer} Treffer, {len(gefundene_spalten)} Spalte(n) mit Treffern")
     rb_tab.config(state="normal")
     rb_sp.config(state="normal")
     _rendern()
