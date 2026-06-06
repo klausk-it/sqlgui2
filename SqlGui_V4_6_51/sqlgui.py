@@ -3,7 +3,7 @@ SqlGui - bereinigte Hauptdatei mit einem einzigen CSV-Pfad.
 Fokus: DB-Grundfunktionen, CSV-Vorschau und CSV-Rechtsklickmenü mit Word Wrap.
 """
 
-__version__ = "4.6.52"
+__version__ = "4.6.51"
 G_HELP_INFO = f"SQL-GUI {__version__}"
 
 import csv
@@ -4899,27 +4899,8 @@ def tabellenfenster_oeffnen(tabellenname):
     G_tabellen_cache[fenster_id]["kontext_menu"] = kontext_menu
     fenster_tree.bind("<ButtonRelease-1>", lambda event, fid=fenster_id: tabellenfenster_linksklick_auf_zelle(event, fid))
     fenster_tree.bind("<Double-1>", lambda event, fid=fenster_id: tabellenfenster_doppelklick_auf_zelle(event, fid))
-    # Einheitliches Rechtsklick-Menü via standard_tv_rechtsklick_anbinden
-    def _on_sel(item_id, spalte_id):
-        G_tabellen_cache[fenster_id]["kontext_item_id"]  = item_id
-        G_tabellen_cache[fenster_id]["kontext_spalte_id"] = spalte_id
-    from sqlgui_sql import standard_tv_rechtsklick_anbinden as _strka
-    _tab_rk_ref = _strka(
-        fenster_tree, tabellenname, top,
-        db_edit=True,
-        on_selection_fn=_on_sel,
-        ip_filter_fn=lambda: tabellenfenster_ip_filter_anwenden(fenster_id),
-        maske_filter_fn=lambda: tabellenfenster_maske_filter_anwenden(fenster_id),
-        vd_projekt_fn=lambda: tabellenfenster_verknuepfte_datensaetze_anzeigen(fenster_id),
-        vd_fk_vor_fn=lambda: tabellenfenster_vd_vorwaerts_fk(fenster_id),
-        vd_fk_rueck_fn=lambda: tabellenfenster_vd_rueckwaerts_fk(fenster_id),
-        vd_namen_fn=lambda: tabellenfenster_vd_namenbasiert(fenster_id),
-    )
-    G_tabellen_cache[fenster_id]["rk_ref"] = _tab_rk_ref
-    # Heading-Rechtsklick zusätzlich binden (add="+" damit beide feuern)
-    fenster_tree.bind("<Button-3>",
-        lambda event, fid=fenster_id: tabellenfenster_heading_oder_zelle_rechtsklick(event, fid),
-        add="+")
+    fenster_tree.bind("<Button-3>", lambda event, fid=fenster_id: tabellenfenster_rechtsklick(event, fid))
+    fenster_tree.bind("<Button-3>", lambda event, fid=fenster_id: tabellenfenster_heading_oder_zelle_rechtsklick(event, fid), add="+")
 
     def spaltenbreite_merken(event, fid=fenster_id):
         """Speichert alle aktuellen Spaltenbreiten nach manuellem Ziehen."""
@@ -5141,9 +5122,6 @@ def tabellenfenster_queue_pruefen(fenster_id):
                 tabellenfenster_sortieren(fenster_id, _ip_spalte)
         gesamt_formatiert = f"{cache['anzahl']:,}".replace(",", ".")
         tabellenfenster_basis_titel_setzen(fenster_id, f"  * Tabelle geladen ({gesamt_formatiert} Datensätze)")
-        # rk_ref["alle"] synchronisieren damit Feldfilter im universellen Menü klappt
-        if "rk_ref" in cache and isinstance(cache["rk_ref"], dict):
-            cache["rk_ref"]["alle"] = list(cache.get("zeilen", []))
         return
     fenster.after(100, lambda: tabellenfenster_queue_pruefen(fenster_id))
 
