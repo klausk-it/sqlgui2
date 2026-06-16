@@ -943,6 +943,7 @@ def sql_modul_initialisieren(
     debug_log_funktion=None,
     logging_eintrag_schreiben_funktion=None,
     fenster_standard_menue_anbringen_funktion=None,
+    treeview_schrift_menue_anbringen_funktion=None,
     fenster_schliessen_callback_setzen_funktion=None,
     ip_range_aufteilen_funktion_param=None,
     eindeutigen_tabellennamen_param=None,
@@ -963,6 +964,7 @@ def sql_modul_initialisieren(
     global tabellen_laden, tabellen_dropdown_aktualisieren
     global tree_spalten_breiten_anpassen, fenster_registrieren
     global ipv4_to_int, debug_log, logging_eintrag_schreiben, fenster_standard_menue_anbringen
+    global treeview_schrift_menue_anbringen
     global fenster_schliessen_callback_setzen, ip_range_aufteilen_funktion
     global eindeutigen_tabellennamen_vorschlagen_funktion, eindeutigen_dateinamen_vorschlagen_funktion
     global hauptfenster_projekt_modus_setzen, tabellenfenster_oeffnen, tabellenfenster_holen, rahmenfarbe_setzen, fensterliste_farben_setzen, alle_workflow_fenster_schliessen, alle_fenster_einfaerben
@@ -987,6 +989,8 @@ def sql_modul_initialisieren(
         logging_eintrag_schreiben = logging_eintrag_schreiben_funktion
     if callable(fenster_standard_menue_anbringen_funktion):
         fenster_standard_menue_anbringen = fenster_standard_menue_anbringen_funktion
+    if callable(treeview_schrift_menue_anbringen_funktion):
+        treeview_schrift_menue_anbringen = treeview_schrift_menue_anbringen_funktion
     if callable(fenster_schliessen_callback_setzen_funktion):
         fenster_schliessen_callback_setzen = fenster_schliessen_callback_setzen_funktion
     if callable(ip_range_aufteilen_funktion_param):
@@ -1011,6 +1015,11 @@ def sql_modul_initialisieren(
         alle_fenster_einfaerben = alle_fenster_einfaerben_funktion
     if callable(admin_code_fuer_aktion_pruefen_funktion):
         admin_code_fuer_aktion_pruefen = admin_code_fuer_aktion_pruefen_funktion
+
+
+def treeview_schrift_menue_anbringen(menueleiste, treeview, schluessel):
+    """Fallback-Stub – wird von sqlgui.py überschrieben."""
+    pass
 
 
 def sql_logging_eintrag_sicher_schreiben(meldung, status=0):
@@ -4698,6 +4707,7 @@ def _workflow_abfrage_fenster_oeffnen_modul(abfragename):
     tv.grid(row=0, column=0, sticky="nsew")
     vsb.grid(row=0, column=1, sticky="ns")
     hsb.grid(row=1, column=0, sticky="ew")
+    treeview_schrift_menue_anbringen(res_menue, tv, "Workflow-SQL")
 
     def abfrage_ausfuehren():
         try:
@@ -9826,6 +9836,7 @@ def sql_abfrage_fenster_oeffnen():
                 sy.grid(row=0, column=1, sticky="ns")
                 sx.grid(row=1, column=0, sticky="ew")
                 tv.configure(yscrollcommand=sy.set, xscrollcommand=sx.set)
+                treeview_schrift_menue_anbringen(res_menue, tv, "SQL-Ergebnis")
 
                 ergebnis_cache = {
                     "spalten": list(spalten),

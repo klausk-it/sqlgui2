@@ -3,7 +3,7 @@ SqlGui - bereinigte Hauptdatei mit einem einzigen CSV-Pfad.
 Fokus: DB-Grundfunktionen, CSV-Vorschau und CSV-Rechtsklickmenü mit Word Wrap.
 """
 
-__version__ = "4.6.52"
+__version__ = "4.6.53"
 G_HELP_INFO = f"SQL-GUI {__version__}"
 
 import csv
@@ -4840,6 +4840,7 @@ def tabellenfenster_oeffnen(tabellenname):
     fenster_tree.configure(yscrollcommand=fenster_scroll_y.set, xscrollcommand=fenster_scroll_x.set)
     fenster_tree.tag_configure("suchtreffer", background="#fff3b0", foreground="black")
     fenster_tree.tag_configure("aktiver_suchtreffer", background="#ffd166", foreground="black")
+    treeview_schrift_menue_anbringen(fenster_menue, fenster_tree, f"tabelle:{tabellenname}")
     fenster_queue = queue.Queue()
     G_tabellenfenster[fenster_id] = top
     G_tabellenfenster_nach_name[tabellenname] = fenster_id
@@ -5978,6 +5979,7 @@ def csvvorschaufenster_oeffnen(csvdaten):
     scrollx = ttk.Scrollbar(frame, orient="horizontal", command=treecsv.xview)
     scrollx.grid(row=1, column=0, sticky="ew")
     treecsv.configure(yscrollcommand=scrolly.set, xscrollcommand=scrollx.set)
+    treeview_schrift_menue_anbringen(csv_menue, treecsv, "CSV")
 
     if not header and rows:
         header = [f"Spalte{i + 1}" for i in range(len(rows[0]))]
@@ -6435,6 +6437,65 @@ def fenster_standard_menue_anbringen(fenster, normal_geometry=None, fenstertyp="
     return menueleiste
 
 
+def treeview_schrift_menue_anbringen(menueleiste, treeview, schluessel):
+    """
+    Fügt A (größer) / a (kleiner) Schriftgröße-Steuerung zur Menüleiste hinzu.
+    schluessel: Eindeutiger Schlüssel für zzz_Konfiguration,
+                z.B. "tabelle:MeineName", "CSV", "SQL-Ergebnis", "Workflow-SQL"
+    """
+    SCHRIFT_NAME  = "Segoe UI"
+    SCHRIFT_STD   = 10
+    SCHRIFT_MIN   = 7
+    SCHRIFT_MAX   = 24
+    style_name    = f"TvSchrift{id(treeview)}.Treeview"
+    _groesse_box  = [SCHRIFT_STD]          # mutables Box für Closure
+
+    def _anwenden(groesse):
+        groesse = max(SCHRIFT_MIN, min(SCHRIFT_MAX, int(groesse)))
+        zeilenhoehe = groesse + 10
+        s = ttk.Style()
+        s.configure(style_name,
+                    font=(SCHRIFT_NAME, groesse),
+                    rowheight=zeilenhoehe)
+        s.configure(f"{style_name}.Heading",
+                    font=(SCHRIFT_NAME, groesse))
+        try:
+            treeview.configure(style=style_name)
+        except Exception:
+            pass
+        _groesse_box[0] = groesse
+        return groesse
+
+    def _groesser():
+        neue = _anwenden(_groesse_box[0] + 1)
+        konfiguration_wert_speichern("schrift_groesse", schluessel, str(neue))
+
+    def _kleiner():
+        neue = _anwenden(_groesse_box[0] - 1)
+        konfiguration_wert_speichern("schrift_groesse", schluessel, str(neue))
+
+    # Gespeicherte Größe sofort anwenden
+    try:
+        gespeichert = konfiguration_wert_lesen("schrift_groesse", schluessel)
+        if gespeichert:
+            _anwenden(int(gespeichert))
+    except Exception:
+        pass
+
+    # Einträge direkt in der Menüleiste (kein Untermenü)
+    menueleiste.add_separator()
+    menueleiste.add_command(
+        label="A",
+        command=_groesser,
+        font=(SCHRIFT_NAME, 14, "bold"),
+    )
+    menueleiste.add_command(
+        label="a",
+        command=_kleiner,
+        font=(SCHRIFT_NAME, 9),
+    )
+
+
 def menue_british_racing_green_anwenden(menu):
     if menu is None:
         return
@@ -6706,6 +6767,7 @@ sql_modul_initialisieren(
     debug_log_funktion=debug_log,
     logging_eintrag_schreiben_funktion=logging_eintrag_schreiben,
     fenster_standard_menue_anbringen_funktion=fenster_standard_menue_anbringen,
+    treeview_schrift_menue_anbringen_funktion=treeview_schrift_menue_anbringen,
     fenster_schliessen_callback_setzen_funktion=fenster_schliessen_callback_setzen,
     ip_range_aufteilen_funktion_param=ip_range_aufteilen,
     eindeutigen_tabellennamen_param=eindeutigen_tabellennamen_vorschlagen,
